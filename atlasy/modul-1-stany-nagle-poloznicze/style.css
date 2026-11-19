@@ -1,0 +1,179 @@
+/* Style specyficzne dla modul-1-stany-nagle-poloznicze (baza w ../atlas-base.css) */
+.fig svg { width: 100%; height: auto; }
+.fig svg text { font-family: var(--font-body); }
+.fig.wide svg.min { min-width: 680px; }
+@media (max-width: 720px) { .fig.scroll { overflow-x: auto; } }
+
+.sev {
+  display: inline-block;
+  font-size: .74rem;
+  font-weight: 800;
+  padding: .08rem .52rem;
+  border-radius: 6px;
+  color: var(--ink-inv);
+  white-space: nowrap;
+}
+.sev.r { background: var(--red); }
+.sev.a { background: var(--amber); }
+.sev.g { background: var(--green); }
+.sev.b { background: var(--blue); }
+.sev.v { background: var(--violet); }
+
+.t4-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .65rem;
+  margin-bottom: 1rem;
+}
+.t4-btn {
+  display: grid;
+  gap: .18rem;
+  text-align: left;
+  padding: .85rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  box-shadow: var(--shadow);
+  transition: border-color .15s, background-color .15s, transform .15s;
+}
+.t4-btn:hover { border-color: var(--teal); }
+.t4-btn[aria-selected="true"] {
+  border-color: var(--teal);
+  background: var(--teal-l);
+}
+.t4-btn .t4-pct {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--teal-d);
+}
+.t4-btn strong { font-size: .96rem; }
+.t4-btn small { font-size: .8rem; color: var(--ink-2); }
+
+.si-calc {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .85rem;
+  align-items: end;
+  margin-top: .7rem;
+}
+.si-calc label {
+  display: grid;
+  gap: .25rem;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.si-calc input[type="number"] {
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: .48rem .7rem;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+.si-res {
+  padding: .65rem .9rem;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.si-res b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.steps {
+  counter-reset: st;
+  display: grid;
+  gap: .55rem;
+}
+.steps .step {
+  counter-increment: st;
+  display: grid;
+  grid-template-columns: 2.1rem 1fr;
+  gap: .65rem;
+  align-items: start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: .65rem .85rem;
+}
+.steps .step::before {
+  content: counter(st);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--teal);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.steps .step.r::before { background: var(--red); }
+.steps .step.b::before { background: var(--blue); }
+.steps .step.g::before { background: var(--green); }
+.steps .step.a::before { background: var(--amber); }
+
+.vs th:first-child,
+.vs td:first-child { font-weight: 700; width: 22%; }
+.dose td:nth-child(2) { font-weight: 800; white-space: nowrap; }
+.dose tr.grp td {
+  background: var(--surface-2);
+  font-weight: 800;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-2);
+}
+
+.qtools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.qtools .sp { flex: 1; }
+
+.fn small {
+  display: block;
+  font-size: .8rem;
+  color: var(--ink-2);
+  font-weight: 500;
+  margin-top: .15rem;
+}
+
+.dual-list {
+  display: grid;
+  gap: .85rem;
+  margin-top: 1rem;
+}
+.dual-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+}
+.dual-item h3 { margin-bottom: .55rem; font-size: 1.05rem; }
+
+@media (max-width: 900px) {
+  .t4-grid { grid-template-columns: 1fr 1fr; }
+  .si-calc { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .t4-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<script>
+try{
+  if(window.self!==window.top)document.documentElement.classList.add('hub-embedded');
+  const t=localStorage.getItem('ginpol_hub_theme')||'auto';
+  if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
+}catch(e){}
+window.addEventListener('storage',e=>{
+  if(e.key==='ginpol_hub_theme'){
+    const t=e.newValue||'auto';
+    if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
+    else delete document.documentElement.dataset.theme;
+  }
+});
+window.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='SET_THEME'){
+    if(e.data.theme==='dark')document.documentElement.dataset.theme='dark';
+    else delete document.documentElement.dataset.theme;
+  }
+});
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>[1–3] Stany nagłe w położnictwie i ginekologii — atlas kliniczny</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous"></noscript>
+<link rel="stylesheet" href="../atlas-base.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../atlas-mobile.css">
+</head>
+<body>
+<nav class="nav" aria-label="Nawigacja sekcji atlasu"><div class="wrap">
+  <a class="hub-back" href="../../index.html#/atlasy">← Hub</a>
+  <div class="brand"><b>[1–3]</b> <span>Stany nagłe OB/GYN</span></div>
+  <ul id="navlist">
+    <li><a href="#przeglad">Przegląd</a></li>
+    <li><a href="#pph">PPH 4T</a></li>
+    <li><a href="#lozysko">Łożysko</a></li>
+    <li><a href="#preeklampsja">Preeklampsja</a></li>
+    <li><a href="#ektopowa">Ektopowa</a></li>
+    <li><a href="#skret">Skręt</a></li>
+    <li><a href="#dawki">Dawki</a></li>
+    <li><a href="#zadania">Zadania</a></li>
+    <li><a href="#klucz">Klucz/wytyczne</a></li>
+    <li><a href="#pulapki">Pułapki</a></li>
+  </ul>
+</div></nav>
+
+<header class="hero"><div class="wrap grid">
+  <div>
+    <h1>Stany nagłe w położnictwie<br><span>i ginekologii</span></h1>
+    <p class="sub">Moduły [1][2][3] — skondensowany atlas kliniczno-egzaminacyjny: protokół 4T krwotoku poporodowego i Shock Index, krwawienia w II/III trymestrze, preeklampsja/rzucawka/HELLP z nadzorem MgSO₄, ciąża ektopowa oraz skręt przydatków.</p>
+    <div class="chips">
+      <span class="chip s">PPH: 4T + TXA 1 g i.v. &lt;3 h</span>
+      <span class="chip i">ZAKAZ badania dwuręcznego przed USG</span>
+      <span class="chip e">MgSO₄ → antidotum: glukonian wapnia</span>
+      <span class="chip f">Skręt: detorsja i oszczędzanie jajnika</span>
+    </div>
+    <div class="legend">
+      <div><span class="kb src">KLUCZ POTWIERDZONY</span> odpowiedź zgodna z kanonem egzaminacyjnym i wytycznymi PTGiP/FIGO</div>
+      <div><span class="kb inf">KLUCZ WNIOSKOWANY</span> rozstrzygnięcie oparte o aktualne rekomendacje kliniczne</div>
+    </div>
+  </div>
+  <figure class="fig" aria-label="Schemat szybkiego triażu w stanach nagłych OB/GYN">
+    <svg viewBox="0 0 440 360" role="img" aria-label="Schemat ABCDE i kierunków działania w stanach nagłych położniczo-ginekologicznych">
+      <defs>
+        <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#44545D"/>
+        </marker>
+      </defs>
+      <rect x="30" y="14" width="380" height="58" rx="12" fill="#A82D1E"/>
+      <text x="220" y="38" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">STABILIZACJA MATKI = PRIORYTET (ABCDE)</text>
+      <text x="220" y="58" text-anchor="middle" font-size="11.5" fill="#FBE6E2">Tlen · 2 wkłucia 14–16G · Ułożenie na lewym boku (&gt;20. t.c.) · Krzyżówka</text>
+
+      <line x1="220" y1="72" x2="220" y2="100" stroke="#44545D" stroke-width="2.2" marker-end="url(#arr1)"/>
+      <line x1="90" y1="86" x2="350" y2="86" stroke="#44545D" stroke-width="2"/>
+      <line x1="90" y1="86" x2="90" y2="104" stroke="#44545D" stroke-width="2" marker-end="url(#arr1)"/>
+      <line x1="350" y1="86" x2="350" y2="104" stroke="#44545D" stroke-width="2" marker-end="url(#arr1)"/>
+
+      <rect x="14" y="108" width="132" height="92" rx="11" fill="#FBE6E2" stroke="#A82D1E" stroke-width="2"/>
+      <text x="80" y="130" text-anchor="middle" font-size="12.5" font-weight="800" fill="#A82D1E">KRWOTOK</text>
+      <text x="80" y="149" text-anchor="middle" font-size="11" fill="#13232C">PPH → 4T + TXA</text>
+      <text x="80" y="166" text-anchor="middle" font-size="11" fill="#13232C">III trym. → USG!</text>
+      <text x="80" y="183" text-anchor="middle" font-size="11" fill="#13232C">SI ≥ 0,9 = alarm</text>
+
+      <rect x="154" y="108" width="132" height="92" rx="11" fill="#FCEFD6" stroke="#8F5808" stroke-width="2"/>
+      <text x="220" y="130" text-anchor="middle" font-size="12.5" font-weight="800" fill="#8F5808">NT / DRGAWKI</text>
+      <text x="220" y="149" text-anchor="middle" font-size="11" fill="#13232C">RR ≥160/110 i.v.</text>
+      <text x="220" y="166" text-anchor="middle" font-size="11" fill="#13232C">MgSO₄ 4–6 g i.v.</text>
+      <text x="220" y="183" text-anchor="middle" font-size="11" fill="#13232C">HELLP: PLT, LDH</text>
+
+      <rect x="294" y="108" width="132" height="92" rx="11" fill="#E1ECF9" stroke="#2B63AE" stroke-width="2"/>
+      <text x="360" y="130" text-anchor="middle" font-size="12.5" font-weight="800" fill="#2B63AE">OSTRY BRZUCH</text>
+      <text x="360" y="149" text-anchor="middle" font-size="11" fill="#13232C">Najpierw β-hCG!</text>
+      <text x="360" y="166" text-anchor="middle" font-size="11" fill="#13232C">Ektopowa → płyn</text>
+      <text x="360" y="183" text-anchor="middle" font-size="11" fill="#13232C">Skręt → detorsja</text>
+
+      <line x1="80" y1="200" x2="80" y2="232" stroke="#44545D" stroke-width="2"/>
+      <line x1="220" y1="200" x2="220" y2="232" stroke="#44545D" stroke-width="2"/>
+      <line x1="360" y1="200" x2="360" y2="232" stroke="#44545D" stroke-width="2"/>
+      <line x1="80" y1="232" x2="360" y2="232" stroke="#44545D" stroke-width="2"/>
+      <line x1="220" y1="232" x2="220" y2="254" stroke="#44545D" stroke-width="2.2" marker-end="url(#arr1)"/>
+
+      <rect x="30" y="258" width="380" height="86" rx="12" fill="#E1F3E7" stroke="#216B3E" stroke-width="2"/>
+      <text x="220" y="281" text-anchor="middle" font-size="12.5" font-weight="800" fill="#216B3E">ROZWIĄZANIE CIĄŻY / ZABIEG PO STABILIZACJI</text>
+      <text x="220" y="301" text-anchor="middle" font-size="11.5" fill="#13232C">Ocena dobrostanu płodu (KTG/USG) równolegle do resuscytacji matki</text>
+      <text x="220" y="321" text-anchor="middle" font-size="11" fill="#44545D">Pamiętaj o immunoprofilaktyce anty-D u kobiet RhD(-) w ciągu 72 h</text>
+    </svg>
+    <figcaption>Najważniejsza reguła położnictwa ratunkowego: przeżycie płodu zależy od skutecznej resuscytacji matki.</figcaption>
+  </figure>
+</div>
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi r"><b>~70%</b><span>PPH wynika z atonii macicy (Tone)</span></div>
+    <div class="kpi a"><b>≥ 0,9</b><span>Położniczy Shock Index alarmowy (HR/SBP)</span></div>
+    <div class="kpi"><b>&lt; 3 h</b><span>Okno dla kwasu traneksamowego 1 g i.v.</span></div>
+    <div class="kpi v"><b>10 ml</b><span>10% glukonian wapnia i.v. — antidotum MgSO₄</span></div>
+  </div>
+</div></header>
+
+<main>
+<!-- ============ PRZEGLĄD ============ -->
+<section id="przeglad"><div class="wrap">
+  <h2>Przegląd i złote zasady stanów nagłych OB/GYN</h2>
+  <p class="lead">Ciąża maskuje wczesną hipowolemię dzięki fizjologicznej hiperwolemii (+40–50% objętości osocza). Spadek ciśnienia tętniczego występuje późno — często dopiero po utracie 25–30% krwi krążącej.</p>
+  <div class="grid3">
+    <div class="tcard r">
+      <h3>Przesunięcie macicy w lewo</h3>
+      <p>Po 20. t.c. ciężarna macica uciska żyłę główną dolną w pozycji leżącej na wznak, zmniejszając powrót żylny i rzut serca nawet o 30%. Zawsze stosuj <b>pochylenie 15–30° na lewy bok</b> lub ręczne przesunięcie macicy w lewo.</p>
+    </div>
+    <div class="tcard b">
+      <h3>Najpierw β-hCG u każdej kobiety</h3>
+      <p>Każda kobieta w wieku rozrodczym (12–55 lat) z ostrym bólem brzucha, omdleniem lub nieprawidłowym krwawieniem wymaga <b>pilnego wykluczenia ciąży (β-hCG)</b> zanim rozważysz inne przyczyny.</p>
+    </div>
+    <div class="tcard g">
+      <h3>Niezależność krążenia i krzepnięcia</h3>
+      <p>W położnictwie normą fibrynogenu jest <b>4–6 g/l</b>. Wartość &lt;2 g/l oznacza już ciężką koagulopatię ze zużycia — w oddzieleniu łożyska i PPH reaguj na wczesny spadek, nie czekaj na INR.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PPH ============ -->
+<section id="pph"><div class="wrap">
+  <h2>Krwotok poporodowy (PPH) — protokół 4T i Shock Index</h2>
+  <p class="lead">Definicja klasyczna PTGiP/WHO: utrata krwi ≥500 ml po porodzie drogami natury lub ≥1000 ml po cięciu cesarskim (pierwotny ≤24 h, wtórny &gt;24 h do 6–12 tyg.). Wybierz element 4T, aby zobaczyć postępowanie.</p>
+
+  <div class="t4-grid" id="t4Tabs" role="tablist" aria-label="Przyczyny PPH 4T">
+    <button class="t4-btn" role="tab" aria-selected="true" data-t4="tone">
+      <span class="t4-pct">70%</span>
+      <strong>1. Tone (Atonia)</strong>
+      <small>Miękka, wysoka macica</small>
+    </button>
+    <button class="t4-btn" role="tab" aria-selected="false" data-t4="trauma">
+      <span class="t4-pct">20%</span>
+      <strong>2. Trauma (Urazy)</strong>
+      <small>Twarda macica + krew</small>
+    </button>
+    <button class="t4-btn" role="tab" aria-selected="false" data-t4="tissue">
+      <span class="t4-pct">10%</span>
+      <strong>3. Tissue (Tkanki)</strong>
+      <small>Resztki łożyska, PAS</small>
+    </button>
+    <button class="t4-btn" role="tab" aria-selected="false" data-t4="thrombin">
+      <span class="t4-pct">1%</span>
+      <strong>4. Thrombin (DIC)</strong>
+      <small>Brak skrzepu, fibrynogen &lt;2</small>
+    </button>
+  </div>
+  <div class="card" id="t4Panel" role="tabpanel"></div>
+
+  <div class="grid2" style="margin-top:1.2rem">
+    <div class="card">
+      <h3>Indeks wstrząsowy (Shock Index = HR / SBP)</h3>
+      <p class="small">W położnictwie czulszy od samego RR i szacowania wizualnego objętości krwi (które zaniża stratę o 30–50%).</p>
+      <div class="si-calc">
+        <label>Tętno — HR (/min)<input type="number" id="siHr" value="112" min="40" max="220"></label>
+        <label>Ciśnienie skurczowe — SBP (mmHg)<input type="number" id="siSbp" value="95" min="40" max="220"></label>
+        <div class="si-res" id="siOut" role="status"></div>
+      </div>
+      <div class="tw" style="margin-top:.85rem"><table id="siTable"></table></div>
+    </div>
+    <div class="card">
+      <h3>Pierwsze 15 minut w PPH — sekwencja ratunkowa</h3>
+      <div class="steps" style="margin-top:.7rem">
+        <div class="step r"><div><b>Wezwij pomoc i oznacz czas „0”</b> — położnik, anestezjolog, bank krwi; 2 wkłucia 14–16G, krew na krzyżówkę, morfologię i fibrynogen.</div></div>
+        <div class="step"><div><b>Masaż macicy + cewnik Foleya</b> — pusty pęcherz ułatwia obkurczenie macicy i pozwala mierzyć godzinową diurezę.</div></div>
+        <div class="step b"><div><b>Uterotoniki + TXA 1 g i.v.</b> — oksytocyna 5 j.m. i.v. + wlew; TXA 1 g i.v. w 10 min (&lt;3 h od porodu). Unikaj metyloergometryny w NT!</div></div>
+        <div class="step a"><div><b>Szukaj przyczyny (4T)</b> — kontrola popłodu, wzierniki (szyjka/pochwa), USG jamy macicy, korekcja fibrynogenu (&lt;2 g/l).</div></div>
+        <div class="step g"><div><b>Eskalacja hemostatyczna</b> — balon Bakri, szew B-Lynch, embolizacja/podwiązanie tętnic macicznych, w ostateczności histerektomia.</div></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ ŁOŻYSKO ============ -->
+<section id="lozysko"><div class="wrap">
+  <h2>Krwawienie w II/III trymestrze: łożysko przodujące vs oddzielenie</h2>
+  <p class="lead">Dwie kluczowe przyczyny krwawienia przedporodowego wymagające odmiennego postępowania. Różnicowanie opiera się na bólu, napięciu macicy, stanie płodu i wyniku USG.</p>
+
+  <div class="callout red" style="margin-bottom:1.2rem">
+    <b class="k">ZAKAZ BADANIA DWURĘCZNEGO PRZED USG!</b>
+    U każdej ciężarnej po 20. t.c. z krwawieniem z dróg rodnych badanie palpacyjne przez pochwę przed wykluczeniem łożyska przodującego (<em>placenta praevia</em>) w USG może rozerwać naczynia łożyskowe i wywołać katastrofalny, śmiertelny krwotok. Najpierw USG!
+  </div>
+
+  <div class="tw"><table class="vs" id="placentaTable"></table></div>
+
+  <div class="grid2" style="margin-top:1.1rem">
+    <div class="callout amber">
+      <b class="k">Naczynia przodujące (Vasa praevia)</b>
+      Pęknięcie błon płodowych (spontaniczne lub amniotomia) + natychmiastowe bezbolesne krwawienie + <b>nagła ciężka bradykardia / zapis sinusoidalny płodu</b>. Krew jest krwią PŁODU — wykrwawienie następuje w minuty → natychmiastowe cięcie cesarskie!
+    </div>
+    <div class="callout blue">
+      <b class="k">Pęknięcie macicy (Ruptura uteri)</b>
+      Pacjentka z blizną po CC w trakcie porodu: nagły rozrywający ból, ustanie czynności skurczowej, wycofanie części przodującej, ciężka bradykardia płodu i wstrząs matki → natychmiastowa laparotomia.
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PREEKLAMPSJA ============ -->
+<section id="preeklampsja"><div class="wrap">
+  <h2>Preeklampsja, rzucawka i zespół HELLP</h2>
+  <p class="lead">Preeklampsja to nowo powstałe nadciśnienie tętnicze (≥140/90 mmHg po 20. t.c.) z towarzyszącym białkomoczem LUB objawami uszkodzenia narządowego. Jedynym leczeniem przyczynowym jest zakończenie ciąży.</p>
+
+  <div class="grid3">
+    <div class="tcard a">
+      <h3>Cechy ciężkiej preeklampsji</h3>
+      <ul>
+        <li>RR ≥160/110 mmHg (2 pomiary w odstępie 15 min — stan nagły!)</li>
+        <li>Małopłytkowość &lt;100 G/l</li>
+        <li>Wzrost AST/ALT ≥2× GGN lub silny ból w prawym podżebrzu/nadbrzuszu</li>
+        <li>Kreatynina &gt;1,1 mg/dl (lub podwojenie)</li>
+        <li>Obrzęk płuc</li>
+        <li>Zaburzenia OUN/wzrokowe (ból głowy, mroczki, wygórowane odruchy)</li>
+      </ul>
+    </div>
+    <div class="tcard r">
+      <h3>Zespół HELLP (kryteria Tennessee)</h3>
+      <ul>
+        <li><b>H — Hemolysis:</b> LDH &gt;600 U/l, schizocyty w rozmazie, ↓ haptoglobina, ↑ bilirubina pośrednia</li>
+        <li><b>EL — Elevated Liver enzymes:</b> AST/ALT ≥2× GGN (&gt;70 U/l)</li>
+        <li><b>LP — Low Platelets:</b> PLT &lt;100 G/l (klasa I &lt;50 G/l)</li>
+      </ul>
+      <p class="small" style="margin-top:.5rem">Uwaga: u 15–20% pacjentek z HELLP RR lub białkomocz mogą być początkowo prawidłowe!</p>
+    </div>
+    <div class="tcard v">
+      <h3>Rzucawka (Eclampsia)</h3>
+      <ul>
+        <li>Nowe napady toniczno-kloniczne u kobiety z preeklampsją (przed, w trakcie lub nawet do 4–6 tyg. po porodzie).</li>
+        <li><b>Kolejność:</b> zabezpiecz drogi oddechowe (lewy bok) + tlen → <b>MgSO₄ 4–6 g i.v.</b> (lek I rzutu, skuteczniejszy niż diazepam/fenytoina!) → obniż RR &lt;160/110.</li>
+        <li><b>Dopiero po stabilizacji</b> zdecyduj o rozwiązaniu ciąży.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:1.1rem">
+    <div class="card">
+      <h3>Protokół i monitorowanie siarczanu magnezu (MgSO₄)</h3>
+      <ul class="tight" style="margin-top:.45rem">
+        <li><b>Dawka nasycająca:</b> 4–6 g i.v. w 15–20 minut.</li>
+        <li><b>Wlew podtrzymujący:</b> 1–2 g/h i.v. w pompie infuzyjnej przez minimum 24 h od porodu lub ostatniego napadu.</li>
+        <li><b>Obowiązkowe monitorowanie przyłóżkowe:</b>
+          (1) obecność odruchów kolanowych,
+          (2) częstość oddechów ≥12–16/min,
+          (3) diureza godzinowa ≥25–30 ml/h (Mg²⁺ wydalany wyłącznie przez nerki!).</li>
+      </ul>
+    </div>
+    <div class="callout red">
+      <b class="k">Zatrucie MgSO₄ i antidotum</b>
+      Progresja objawów toksyczności: <b>zniesienie odruchów kolanowych</b> (7–10 mEq/l) → <b>depresja oddechowa &lt;12/min</b> (10–13 mEq/l) → <b>zatrzymanie krążenia</b> (&gt;15–25 mEq/l).<br>
+      <b>Postępowanie natychmiastowe:</b> wstrzymaj wlew MgSO₄, podaj tlen i wstrzyknij <b>10% glukonian wapnia 10 ml (= 1 g) i.v. powoli w ciągu 3–5 minut</b>. Nie czekaj na wynik magnezu z laboratorium!
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ CIĄŻA EKTOPOWA ============ -->
+<section id="ektopowa"><div class="wrap">
+  <h2>Ciąża ektopowa (pozamaciczna)</h2>
+  <p class="lead">Najczęstsza przyczyna zgonów ciężarnych w I trymestrze (95% w jajowodzie, głównie bańka). Klasyczna triada (brak miesiączki + ból podbrzusza + plamienie) występuje tylko u części pacjentek.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Algorytm diagnostyczny (β-hCG + USG TV)</h3>
+      <div class="flow" style="margin-top:.7rem">
+        <div class="fn start">Dodatni test ciążowy + ból / plamienie w I trymestrze</div>
+        <div class="ar">▼</div>
+        <div class="fn amber"><b>Ocena stabilności hemodynamicznej + USG TV + β-hCG</b><small>Strefa dyskryminacyjna USG TV: 1500–2000 (wg nowszych ACOG do 3500) mIU/ml</small></div>
+        <div class="ar">▼</div>
+        <div class="branch">
+          <div>
+            <div class="fn red"><b>Niestabilna / wolny płyn / objaw Kehra</b><small>Pęknięta ciąża ektopowa</small></div>
+            <div class="ar">▼</div>
+            <div class="fn red"><b>Pilna operacja + resuscytacja</b><small>Laparoskopia (salpingektomia) lub laparotomia. ZAKAZ MTX!</small></div>
+          </div>
+          <div>
+            <div class="fn green"><b>Stabilna, niepęknięta</b><small>Brak FHR, pęcherzyk &lt;3,5–4 cm, β-hCG &lt;5000</small></div>
+            <div class="ar">▼</div>
+            <div class="fn blue"><b>Metotreksat 50 mg/m² i.m.</b><small>Kontrola β-hCG dzień 4. i 7. (oczekiwany spadek ≥15%)</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <h3>Kinetyka β-hCG i pułapki</h3>
+        <ul class="tight" style="margin-top:.45rem">
+          <li>W prawidłowej wczesnej ciąży wewnątrzmacicznej β-hCG rośnie o min. <b>53–66% w ciągu 48 h</b> (klasycznie „podwaja się”).</li>
+          <li>Wzrost wolniejszy, plateau lub powolny spadek przy pustej jamie macicy silnie sugeruje ciążę ektopową (PUL — <em>pregnancy of unknown location</em>).</li>
+          <li><b>Pseudopęcherzyk</b> w jamie macicy (płyn w środku bez obrączki trofoblastu i bez pęcherzyka żółtkowego) nie potwierdza ciąży wewnątrzmacicznej!</li>
+          <li><b>Objaw Kehra:</b> ból promieniujący do barku wskutek drażnienia kopuły przepony przez krew w jamie otrzewnej.</li>
+        </ul>
+      </div>
+      <div class="callout amber">
+        <b class="k">Bezwzględne przeciwwskazania do metotreksatu (MTX)</b>
+        Niestabilność hemodynamiczna / podejrzenie pęknięcia, obecna czynność serca zarodka (względne/silne), ciąża heterotopowa, karmienie piersią, niewydolność nerek/wątroby, małopłytkowość/leukopenia, brak możliwości kontroli. Pamiętaj o <b>anty-D u RhD(-)</b>!
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ SKRĘT PRZYDATKÓW ============ -->
+<section id="skret"><div class="wrap">
+  <h2>Skręt przydatków (torsio adnexorum)</h2>
+  <p class="lead">Ostry stan ginekologiczny grożący martwicą jajnika i utratą płodności. Najczęściej towarzyszy łagodnej torbieli &gt;5 cm (np. potworniak dojrzały / torbiel skórzasta) lub stymulacji owulacji; częstszy po stronie prawej (esica stabilizuje lewą stronę).</p>
+
+  <div class="grid2">
+    <div class="tcard b">
+      <h3>Obraz kliniczny i diagnostyka</h3>
+      <ul>
+        <li><b>Nagły, ostry, jednostronny ból podbrzusza</b> (może być falujący przy niepełnym/nawracającym skręcie), silne <b>nudności i wymioty</b> (~70%).</li>
+        <li>Wyklucz ciążę (β-hCG) — choć skręt zdarza się również w ciąży (np. torbiel ciałka żółtego w I trymestrze).</li>
+        <li><b>USG TV:</b> powiększony, obrzęknięty jajnik z pęcherzykami zepchniętymi na obwód („naszyjnik pereł”), wolny płyn, objaw wiru szypuły (<em>whirlpool sign</em>).</li>
+        <li><b>Doppler:</b> brak przepływu potwierdza podejrzenie, ale <b>PRAWIDŁOWY przepływ NIE WYKLUCZA skrętu</b> (podwójne unaczynienie jajnika!).</li>
+      </ul>
+    </div>
+    <div class="tcard g">
+      <h3>Postępowanie operacyjne (oszczędzające!)</h3>
+      <ul>
+        <li><b>Pilna laparoskopia</b> — im szybsza interwencja, tym większa szansa na zachowanie rezerwy jajnikowej.</li>
+        <li><b>Detorsja (odkręcenie) i pozostawienie jajnika</b> u kobiet w wieku rozrodczym — nawet gdy śródoperacyjnie jajnik jest ciemnosiny/obrzęknięty!</li>
+        <li>W miarę możliwości wyłuszczenie torbieli (cystektomia), gdy tkanki na to pozwalają (lub odroczenie cystektomii przy ekstremalnym obrzęku).</li>
+        <li>Adneksektomia jest zarezerwowana niemal wyłącznie dla kobiet po menopauzie lub przy wyraźnym rozpadzie martwiczym/podejrzeniu nowotworu złośliwego.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ DAWKI ============ -->
+<section id="dawki"><div class="wrap">
+  <h2>Leki, dawki i odtrutki w stanach nagłych</h2>
+  <p class="lead">Zestawienie dawek ratunkowych do szybkiej powtórki przed zaliczeniem i OSCE. Zawsze weryfikuj dawkę z ChPL i protokołem oddziału.</p>
+  <div class="tw"><table class="dose" id="doseTable"></table></div>
+</div></section>
+
+<!-- ============ ZADANIA ============ -->
+<section id="zadania"><div class="wrap">
+  <h2>Zadania kliniczno-egzaminacyjne (synchronizowane z Hubem)</h2>
+  <p class="lead">Rozwiąż 5 przypadków z modułów [1–3]. Odpowiedzi automatycznie synchronizują się z postępem w Hubie (<code>nagle-ob-q1</code>–<code>nagle-ob-q5</code>).</p>
+  <div class="qtools">
+    <div class="filters" id="qFilters" style="margin:0"></div>
+    <span class="sp"></span>
+    <button class="btn o" id="resetQ" type="button">Resetuj</button>
+  </div>
+  <div id="quiz"></div>
+  <div class="score" id="score" role="status">Wynik: 0 / 0</div>
+</div></section>
+
+<!-- ============ KLUCZ VS WYTYCZNE ============ -->
+<section id="klucz"><div class="wrap">
+  <h2>Podwójna prawda: pod zaliczenie kontra aktualnie klinicznie</h2>
+  <p class="lead">Zestawienie najczęstszych rozbieżności między starszymi kluczami testowymi a aktualnymi rekomendacjami PTGiP, FIGO, RCOG i ACOG.</p>
+  <div class="dual-list" id="dualCards"></div>
+</div></section>
+
+<!-- ============ PUŁAPKI ============ -->
+<section id="pulapki"><div class="wrap">
+  <h2>Red flags, perełki i pułapki egzaminacyjne</h2>
+  <div class="grid3">
+    <div class="callout red">
+      <b class="k">Red flags</b>
+      <ul class="tight">
+        <li>Krwawienie w II/III trymestrze — ZAKAZ badania dwuręcznego przed USG</li>
+        <li>Shock Index ≥0,9 (mimo „normalnego” RR!)</li>
+        <li>Fibrynogen &lt;2 g/l w ciąży = ciężka koagulopatia</li>
+        <li>Brak odruchów kolanowych / RR &lt;12/min przy MgSO₄</li>
+        <li>Objaw Kehra (ból barku) + omdlenie + β-hCG(+)</li>
+      </ul>
+    </div>
+    <div class="callout green">
+      <b class="k">High-yield</b>
+      <ul class="tight">
+        <li>PPH 4T: 70% Tone, 20% Trauma, 10% Tissue, 1% Thrombin</li>
+        <li>TXA 1 g i.v. w ciągu 3 h w każdym PPH (WOMAN)</li>
+        <li>Rzucawka: MgSO₄ to lek z wyboru (nie diazepam!)</li>
+        <li>Antidotum MgSO₄: 10% glukonian wapnia 10 ml i.v.</li>
+        <li>Skręt: pilna laparoskopia + detorsja (oszczędź jajnik)</li>
+      </ul>
+    </div>
+    <div class="callout amber">
+      <b class="k">Klasyczne pułapki</b>
+      <ul class="tight">
+        <li>Podanie metyloergometryny w atonii u kobiety z preeklampsją</li>
+        <li>Wykluczenie skrętu przydatków na podstawie zachowanego Dopplera</li>
+        <li>Wykluczenie oddzielenia łożyska na podstawie prawidłowego USG</li>
+        <li>Rozpoczęcie CC w trakcie czynnego napadu rzucawki bez stabilizacji</li>
+        <li>Podanie MTX niestabilnej pacjentce z pękniętą ciążą ektopową</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+</main>
+
+<footer id="zrodla"><div class="wrap">
+  <h2>Źródła i zastrzeżenie edukacyjne</h2>
+  <ul class="tight" id="srcList" style="margin-top:.5rem"></ul>
+  <p class="small" style="margin-top:.9rem">Materiał ma wyłącznie charakter edukacyjny do nauki na V roku medycyny. Nie zastępuje aktualnych wytycznych PTGiP/FIGO/MZ, ChPL ani konsultacji przy łóżku pacjentki.</p>
+</div></footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="../atlas-hub-sync.js"></script>
+</body>
+</html>

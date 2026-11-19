@@ -1,0 +1,201 @@
+/* Style specyficzne dla modul-2-fizjologia-ciazy-i-porodu (baza w ../atlas-base.css) */
+.fig svg { width: 100%; height: auto; }
+.fig svg text { font-family: var(--font-body); }
+.fig.wide svg.min { min-width: 680px; }
+@media (max-width: 720px) { .fig.scroll { overflow-x: auto; } }
+
+.sev {
+  display: inline-block;
+  font-size: .74rem;
+  font-weight: 800;
+  padding: .08rem .52rem;
+  border-radius: 6px;
+  color: var(--ink-inv);
+  white-space: nowrap;
+}
+.sev.r { background: var(--red); }
+.sev.a { background: var(--amber); }
+.sev.g { background: var(--green); }
+.sev.b { background: var(--blue); }
+.sev.v { background: var(--violet); }
+
+/* Leopold interactive diagram */
+.leo-wrap {
+  display: grid;
+  grid-template-columns: minmax(270px, 410px) 1fr;
+  gap: 1.4rem;
+  align-items: start;
+}
+.leo-svg g.grip { cursor: pointer; }
+.leo-svg g.grip circle,
+.leo-svg g.grip rect { transition: filter .15s, stroke-width .15s, opacity .15s; }
+.leo-svg g.grip:hover circle,
+.leo-svg g.grip:focus circle,
+.leo-svg g.grip.on circle {
+  filter: drop-shadow(0 3px 8px rgba(19, 35, 44, .28));
+  stroke-width: 3.5;
+}
+.leo-svg g.grip:focus { outline: none; }
+.leo-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .45rem;
+  margin-bottom: .9rem;
+}
+.leo-btns button {
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  padding: .5rem .65rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.leo-btns button[aria-selected="true"] {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--on-accent);
+}
+
+/* Bishop interactive scorer */
+.bishop-grid {
+  display: grid;
+  grid-template-columns: 1.35fr .65fr;
+  gap: 1.1rem;
+  align-items: start;
+}
+.bishop-rows { display: grid; gap: .65rem; }
+.bishop-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: .75rem .9rem;
+}
+.bishop-row h4 { margin-bottom: .45rem; font-size: .92rem; }
+.bishop-opts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .4rem;
+}
+.bishop-opts.cols3 { grid-template-columns: repeat(3, 1fr); }
+.bishop-opts button {
+  font: inherit;
+  font-size: .83rem;
+  padding: .45rem .5rem;
+  border-radius: 9px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+  display: grid;
+  gap: .1rem;
+}
+.bishop-opts button b {
+  font-family: var(--font-display);
+  font-size: .95rem;
+  color: var(--teal-d);
+}
+.bishop-opts button[aria-pressed="true"] {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--on-accent);
+}
+.bishop-opts button[aria-pressed="true"] b { color: var(--on-accent); }
+
+.bishop-score {
+  position: sticky;
+  top: 72px;
+  background: var(--surface);
+  border: 2px solid var(--teal);
+  border-radius: var(--r);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+.bishop-score .big {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--teal-d);
+}
+
+/* CTG waveform viewer */
+.ctg-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+}
+.ctg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin: .65rem 0 .4rem;
+}
+.ctg-svg {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+[data-theme="dark"] .ctg-svg .ctg-grid-line { stroke: #243038 !important; }
+[data-theme="dark"] .ctg-svg .ctg-band { fill: rgba(59, 179, 110, .14) !important; }
+
+/* Stages timeline */
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .85rem;
+}
+.stage-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 1rem;
+  box-shadow: var(--shadow), inset 0 3px 0 0 var(--tc, var(--teal));
+}
+.stage-card .num {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--tc, var(--teal-d));
+  line-height: 1;
+  margin-bottom: .35rem;
+}
+.stage-card h3 { font-size: 1.05rem; margin-bottom: .35rem; }
+.stage-card ul { padding-left: 1.05rem; font-size: .9rem; }
+.stage-card li { margin: .2rem 0; }
+
+.qtools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.qtools .sp { flex: 1; }
+
+.dual-list { display: grid; gap: .85rem; margin-top: 1rem; }
+.dual-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+}
+.dual-item h3 { margin-bottom: .55rem; font-size: 1.05rem; }
+
+@media (max-width: 960px) {
+  .leo-wrap, .bishop-grid { grid-template-columns: 1fr; }
+  .stage-grid { grid-template-columns: 1fr 1fr; }
+  .bishop-score { position: static; }
+}
+@media (max-width: 600px) {
+  .stage-grid, .leo-btns { grid-template-columns: 1fr 1fr; }
+  .bishop-opts { grid-template-columns: 1fr 1fr; }
+  .bishop-opts.cols3 { grid-template-columns: 1fr; }
+}

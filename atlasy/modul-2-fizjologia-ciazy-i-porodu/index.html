@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<script>
+try{
+  if(window.self!==window.top)document.documentElement.classList.add('hub-embedded');
+  const t=localStorage.getItem('ginpol_hub_theme')||'auto';
+  if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
+}catch(e){}
+window.addEventListener('storage',e=>{
+  if(e.key==='ginpol_hub_theme'){
+    const t=e.newValue||'auto';
+    if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
+    else delete document.documentElement.dataset.theme;
+  }
+});
+window.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='SET_THEME'){
+    if(e.data.theme==='dark')document.documentElement.dataset.theme='dark';
+    else delete document.documentElement.dataset.theme;
+  }
+});
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>[4–5] Fizjologia ciąży, porodu i KTG — atlas kliniczny</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous"></noscript>
+<link rel="stylesheet" href="../atlas-base.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../atlas-mobile.css">
+</head>
+<body>
+<nav class="nav" aria-label="Nawigacja sekcji atlasu"><div class="wrap">
+  <a class="hub-back" href="../../index.html#/atlasy">← Hub</a>
+  <div class="brand"><b>[4–5]</b> <span>Fizjologia, poród i KTG</span></div>
+  <ul id="navlist">
+    <li><a href="#opieka">Fizjologia</a></li>
+    <li><a href="#badania">Standard MZ</a></li>
+    <li><a href="#porod">Poród</a></li>
+    <li><a href="#leopold">Leopold</a></li>
+    <li><a href="#bishop">Bishop</a></li>
+    <li><a href="#ktg">KTG FIGO</a></li>
+    <li><a href="#polog">Połóg</a></li>
+    <li><a href="#zadania">Zadania</a></li>
+    <li><a href="#klucz">Klucz/wytyczne</a></li>
+    <li><a href="#pulapki">Pułapki</a></li>
+  </ul>
+</div></nav>
+
+<header class="hero"><div class="wrap grid">
+  <div>
+    <h1>Fizjologia ciąży,<br><span>porodu i KTG</span></h1>
+    <p class="sub">Moduły [4][5] — kompletny przewodnik kliniczno-egzaminacyjny: adaptacja narządowa ciężarnej, kalendarz badań wg Standardu MZ, 4 okresy porodu, interaktywne chwyty Leopolda I–IV, kalkulator skali Bishopa, klasyfikacja KTG FIGO 2015 oraz połóg.</p>
+    <div class="chips">
+      <span class="chip e">OGTT 75 g: 24–28. t.c.</span>
+      <span class="chip i">Anty-D: 28–30. t.c. · GBS: 35–37. t.c.</span>
+      <span class="chip f">FHR norma FIGO: 110–160 /min</span>
+      <span class="chip s">Bishop &lt;6 pkt → preindukcja</span>
+    </div>
+    <div class="legend">
+      <div><span class="kb src">KLUCZ POTWIERDZONY</span> zgodny ze Standardem MZ, FIGO 2015 i rekomendacjami PTGiP</div>
+      <div><span class="kb inf">KLUCZ WNIOSKOWANY</span> oparty o aktualną praktykę położniczą i konsensusy kliniczne</div>
+    </div>
+  </div>
+  <figure class="fig" aria-label="Oś czasu ciąży donoszonej i kamienie milowe Standardu MZ">
+    <svg viewBox="0 0 440 310" role="img" aria-label="Oś czasu ciąży od 0 do 42 tygodni z zaznaczonymi badaniami USG, OGTT, anty-D, GBS i porodem w terminie">
+      <rect x="20" y="24" width="126" height="58" rx="10" fill="#E1EFF5" stroke="#245B7A" stroke-width="1.8"/>
+      <text x="83" y="47" text-anchor="middle" font-size="12" font-weight="800" fill="#245B7A">I TRYMESTR</text>
+      <text x="83" y="66" text-anchor="middle" font-size="11" fill="#13232C">0 – 13+6 t.c.</text>
+
+      <rect x="156" y="24" width="128" height="58" rx="10" fill="#E1ECF9" stroke="#2B63AE" stroke-width="1.8"/>
+      <text x="220" y="47" text-anchor="middle" font-size="12" font-weight="800" fill="#2B63AE">II TRYMESTR</text>
+      <text x="220" y="66" text-anchor="middle" font-size="11" fill="#13232C">14+0 – 27+6 t.c.</text>
+
+      <rect x="294" y="24" width="126" height="58" rx="10" fill="#E1F3E7" stroke="#216B3E" stroke-width="1.8"/>
+      <text x="357" y="47" text-anchor="middle" font-size="12" font-weight="800" fill="#216B3E">III TRYMESTR</text>
+      <text x="357" y="66" text-anchor="middle" font-size="11" fill="#13232C">28+0 – 40+6 t.c.</text>
+
+      <line x1="28" y1="126" x2="412" y2="126" stroke="#8A284C" stroke-width="4" stroke-linecap="round"/>
+      <rect x="336" y="118" width="56" height="16" rx="8" fill="#216B3E" opacity=".88"/>
+      <text x="364" y="109" text-anchor="middle" font-size="10" font-weight="800" fill="#216B3E">Termin 37–42</text>
+
+      <circle cx="118" cy="126" r="6" fill="#245B7A"/>
+      <text x="118" y="152" text-anchor="middle" font-size="10.5" font-weight="800" fill="#13232C">11–13+6</text>
+      <text x="118" y="167" text-anchor="middle" font-size="10" fill="#44545D">USG I + PAPP-A</text>
+
+      <circle cx="204" cy="126" r="6" fill="#2B63AE"/>
+      <text x="204" y="152" text-anchor="middle" font-size="10.5" font-weight="800" fill="#13232C">18–22</text>
+      <text x="204" y="167" text-anchor="middle" font-size="10" fill="#44545D">USG połówkowe</text>
+
+      <circle cx="268" cy="126" r="6" fill="#8F5808"/>
+      <text x="268" y="152" text-anchor="middle" font-size="10.5" font-weight="800" fill="#13232C">24–28</text>
+      <text x="268" y="167" text-anchor="middle" font-size="10" fill="#44545D">OGTT 75 g</text>
+
+      <circle cx="316" cy="126" r="6" fill="#8A284C"/>
+      <text x="316" y="196" text-anchor="middle" font-size="10.5" font-weight="800" fill="#13232C">28–30 t.c.</text>
+      <text x="316" y="211" text-anchor="middle" font-size="10" fill="#44545D">Anty-D + USG III</text>
+      <line x1="316" y1="132" x2="316" y2="181" stroke="#8A284C" stroke-dasharray="3 2"/>
+
+      <circle cx="364" cy="126" r="6" fill="#A82D1E"/>
+      <text x="374" y="240" text-anchor="middle" font-size="10.5" font-weight="800" fill="#13232C">35–37 t.c.</text>
+      <text x="374" y="255" text-anchor="middle" font-size="10" fill="#44545D">Wymaz GBS</text>
+      <line x1="364" y1="132" x2="374" y2="225" stroke="#A82D1E" stroke-dasharray="3 2"/>
+
+      <rect x="20" y="270" width="400" height="30" rx="8" fill="#EEF2F0"/>
+      <text x="220" y="289" text-anchor="middle" font-size="11" font-weight="700" fill="#13232C">Reguła Naegelego: OM + 7 dni − 3 miesiące + 1 rok (przy cyklu 28-dniowym)</text>
+    </svg>
+    <figcaption>Najważniejsze punkty kontrolne ciąży fizjologicznej według Standardu Organizacyjnego Opieki Okołoporodowej MZ.</figcaption>
+  </figure>
+</div>
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><b>+40–50%</b><span>Wzrost objętości osocza i rzutu serca</span></div>
+    <div class="kpi v"><b>110–160</b><span>Prawidłowa FHR podstawowa (/min)</span></div>
+    <div class="kpi a"><b>5–25</b><span>Prawidłowa zmienność KTG (/min)</span></div>
+    <div class="kpi r"><b>≥ 6 pkt</b><span>Próg dojrzałości szyjki w skali Bishopa</span></div>
+  </div>
+</div></header>
+
+<main>
+<!-- ============ OPIEKA / FIZJOLOGIA ============ -->
+<section id="opieka"><div class="wrap">
+  <h2>Zmiany fizjologiczne w ciąży według trymestrów</h2>
+  <p class="lead">Znajomość fizjologicznej adaptacji matki chroni przed błędnym rozpoznaniem patologii (np. lekka hemodylucja, niskie PaCO₂, fizjologiczna leukocytoza) oraz pozwala wcześnie wykryć dekompensację. Wybierz trymestr:</p>
+
+  <div class="tabs" id="trimTabs" role="tablist" aria-label="Trymestry ciąży">
+    <button type="button" role="tab" aria-selected="true" data-trim="t1">I trymestr (0–13+6)</button>
+    <button type="button" role="tab" aria-selected="false" data-trim="t2">II trymestr (14–27+6)</button>
+    <button type="button" role="tab" aria-selected="false" data-trim="t3">III trymestr (28–40+6)</button>
+  </div>
+  <div id="trimPanel" role="tabpanel"></div>
+</div></section>
+
+<!-- ============ STANDARD MZ ============ -->
+<section id="badania"><div class="wrap">
+  <h2>Standard organizacyjny opieki okołoporodowej (MZ) — kalendarz badań</h2>
+  <p class="lead">Zestawienie obowiązkowych badań przesiewowych, badań USG i działań profilaktycznych w ciąży fizjologicznej w Polsce.</p>
+  <div class="tw"><table id="mzTable"></table></div>
+</div></section>
+
+<!-- ============ 4 OKRESY PORODU ============ -->
+<section id="porod"><div class="wrap">
+  <h2>Cztery okresy porodu i mechanizm porodu główkowego</h2>
+  <p class="lead">Poród fizjologiczny w terminie (37+0 – 41+6 t.c.) dzieli się na cztery wyraźne okresy o odmiennym nadzorze i ryzyku powikłań.</p>
+
+  <div class="stage-grid">
+    <div class="stage-card" style="--tc:var(--violet)">
+      <div class="num">I</div>
+      <h3>Okres rozwierania</h3>
+      <ul>
+        <li>Od początku regularnej czynności skurczowej do <b>pełnego rozwarcia (10 cm)</b>.</li>
+        <li><b>Faza utajona:</b> do 5–6 cm (wg WHO 2018; dawniej 3–4 cm wg Friedmana).</li>
+        <li><b>Faza aktywna:</b> szybsze rozwieranie szyjki (pierworódka ~8–12 h, wieloródka ~5–8 h).</li>
+      </ul>
+    </div>
+    <div class="stage-card" style="--tc:var(--blue)">
+      <div class="num">II</div>
+      <h3>Okres wydalania płodu</h3>
+      <ul>
+        <li>Od pełnego rozwarcia (10 cm) do urodzenia dziecka.</li>
+        <li>Czas: pierworódka do ~2 h (3 h ze ZZO), wieloródka do ~1 h (2 h ze ZZO).</li>
+        <li><b>7 zwrotów główki:</b> wstawianie → zstępowanie → przygięcie → zwrot wewnętrzny → odgięcie → zwrot zewnętrzny → wytoczenie barków.</li>
+      </ul>
+    </div>
+    <div class="stage-card" style="--tc:var(--amber)">
+      <div class="num">III</div>
+      <h3>Okres łożyskowy</h3>
+      <ul>
+        <li>Od urodzenia dziecka do wydalenia popłodu (norma: <b>≤30 min</b>).</li>
+        <li><b>Aktywne prowadzenie (AMTSL):</b> oksytocyna 5–10 j.m. po urodzeniu przedniego barku/dziecka, kontrolowane pociąganie pępowiny, ocena obkurczenia.</li>
+        <li>Objawy oddzielenia: <b>Küstnera</b> (pępowina nie cofa się przy ucisku nad spojeniem), <b>Schrödera</b> (dno twarde, węższe, nad pępkiem w prawo), <b>Ahlfelda</b> (wydłużenie pępowiny).</li>
+      </ul>
+    </div>
+    <div class="stage-card" style="--tc:var(--red)">
+      <div class="num">IV</div>
+      <h3>Wczesny okres poporodowy</h3>
+      <ul>
+        <li><b>Pierwsze 2 godziny po porodzie</b> — okres najwyższego ryzyka krwotoku poporodowego (PPH)!</li>
+        <li>Kontrola co 15 min: twardość i wysokość dna macicy, krwawienie, RR, HR, diureza, ocena krocza.</li>
+        <li>Nieprzerwany kontakt <b>„skóra do skóry”</b> (min. 2 h) i pierwsze przystawienie do piersi (Standard MZ).</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ CHWYTY LEOPOLDA I-IV ============ -->
+<section id="leopold"><div class="wrap">
+  <h2>Chwyty Leopolda I–IV — badanie zewnętrzne ciężarnej</h2>
+  <p class="lead">Kliknij numer chwytu na schemacie lub przycisk poniżej, aby sprawdzić ułożenie dłoni, pytanie kliniczne i typowe znaleziska (schemat przedstawia najczęstsze położenie podłużne główkowe, I ustawienie lewe — LOA).</p>
+
+  <div class="leo-wrap">
+    <figure class="fig" aria-label="Interaktywny schemat chwytów Leopolda I–IV">
+      <svg class="leo-svg" id="leoSvg" viewBox="0 0 360 440" role="img" aria-label="Schemat brzucha ciężarnej z płodem w położeniu podłużnym główkowym i zaznaczonymi strefami chwytów Leopolda I, II, III i IV">
+        <!-- Sylwetka tułowia i miednicy -->
+        <path d="M90,26 C70,96 54,170 60,260 C66,336 92,390 124,424 L236,424 C268,390 294,336 300,260 C306,170 290,96 270,26" fill="#F5F6F2" stroke="#B5C0C3" stroke-width="2.2"/>
+        <!-- Łuki żebrowe i wyrostek mieczykowaty -->
+        <path d="M98,64 Q180,34 262,64" fill="none" stroke="#B5C0C3" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="180" y="42" text-anchor="middle" font-size="10.5" fill="#596870">Łuki żebrowe</text>
+        <!-- Spojenie łonowe -->
+        <path d="M134,394 Q180,410 226,394" fill="none" stroke="#8A284C" stroke-width="4" stroke-linecap="round"/>
+        <text x="180" y="422" text-anchor="middle" font-size="10.5" font-weight="700" fill="#8A284C">Spojenie łonowe</text>
+
+        <!-- Macica -->
+        <path d="M180,74 C112,74 86,154 94,252 C102,334 136,386 180,386 C224,386 258,334 266,252 C274,154 248,74 180,74 Z" fill="#F6E2EA" stroke="#8A284C" stroke-width="2.5"/>
+
+        <!-- Płód (ułożenie podłużne główkowe, I ustawienie lewe: grzbiet po lewej stronie matki = prawa strona ryciny? Uwaga: perspektywa anatomiczna AP: lewa strona pacjentki jest po PRAWEJ stronie rysunku!) -->
+        <!-- Napisy stron pacjentki -->
+        <text x="44" y="218" text-anchor="middle" font-size="10" font-weight="700" fill="#596870">Prawa</text>
+        <text x="44" y="232" text-anchor="middle" font-size="9.5" fill="#596870">str. matki</text>
+        <text x="316" y="218" text-anchor="middle" font-size="10" font-weight="700" fill="#596870">Lewa</text>
+        <text x="316" y="232" text-anchor="middle" font-size="9.5" fill="#596870">str. matki</text>
+
+        <!-- Pośladki płodu w dnie -->
+        <ellipse cx="186" cy="134" rx="44" ry="30" fill="#FCEFD6" stroke="#8F5808" stroke-width="2"/>
+        <!-- Grzbiet płodu po lewej stronie pacjentki (prawa strona ryciny) -->
+        <path d="M214,148 C246,188 248,256 214,306 C198,318 184,306 182,286 C188,242 186,192 174,158 Z" fill="#E1ECF9" stroke="#2B63AE" stroke-width="2"/>
+        <text x="218" y="230" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2B63AE">Grzbiet</text>
+        <!-- Części drobne po prawej stronie pacjentki (lewa strona ryciny) -->
+        <circle cx="136" cy="196" r="14" fill="#E1EFF5" stroke="#245B7A" stroke-width="1.6"/>
+        <circle cx="132" cy="234" r="15" fill="#E1EFF5" stroke="#245B7A" stroke-width="1.6"/>
+        <circle cx="144" cy="268" r="12" fill="#E1EFF5" stroke="#245B7A" stroke-width="1.6"/>
+        <text x="136" y="294" text-anchor="middle" font-size="9.5" font-weight="700" fill="#245B7A">Kończyny</text>
+        <!-- Główka płodu nad/we wchodzie miednicy -->
+        <circle cx="180" cy="338" r="34" fill="#FFFFFF" stroke="#13232C" stroke-width="2.4"/>
+        <text x="180" y="342" text-anchor="middle" font-size="11" font-weight="800" fill="#13232C">Główka</text>
+
+        <!-- Interaktywne punkty chwytów I–IV -->
+        <g class="grip on" data-leo="1" role="button" tabindex="0" aria-label="I chwyt Leopolda — dno macicy">
+          <path d="M120,86 Q180,62 240,86" fill="none" stroke="#8A284C" stroke-width="4.5" stroke-linecap="round" opacity=".55"/>
+          <circle cx="180" cy="84" r="21" fill="#8A284C" stroke="#FFFFFF" stroke-width="2.5"/>
+          <text x="180" y="90" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">I</text>
+        </g>
+        <g class="grip" data-leo="2" role="button" tabindex="0" aria-label="II chwyt Leopolda — boki macicy">
+          <circle cx="88" cy="215" r="20" fill="#2B63AE" stroke="#FFFFFF" stroke-width="2.5"/>
+          <text x="88" y="221" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">II</text>
+          <circle cx="272" cy="215" r="20" fill="#2B63AE" stroke="#FFFFFF" stroke-width="2.5"/>
+          <text x="272" y="221" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">II</text>
+        </g>
+        <g class="grip" data-leo="3" role="button" tabindex="0" aria-label="III chwyt Leopolda — nad spojeniem">
+          <circle cx="114" cy="340" r="20" fill="#8F5808" stroke="#FFFFFF" stroke-width="2.5"/>
+          <text x="114" y="346" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">III</text>
+        </g>
+        <g class="grip" data-leo="4" role="button" tabindex="0" aria-label="IV chwyt Leopolda — wchód miednicy">
+          <circle cx="246" cy="368" r="20" fill="#216B3E" stroke="#FFFFFF" stroke-width="2.5"/>
+          <text x="246" y="374" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">IV</text>
+        </g>
+      </svg>
+      <figcaption>Widok anatomiczny (przednio-tylny): lewa strona matki znajduje się po prawej stronie schematu. Kliknij I, II, III lub IV.</figcaption>
+    </figure>
+
+    <div>
+      <div class="leo-btns" id="leoBtns" role="tablist" aria-label="Wybierz chwyt Leopolda">
+        <button type="button" role="tab" aria-selected="true" data-leo="1">I chwyt</button>
+        <button type="button" role="tab" aria-selected="false" data-leo="2">II chwyt</button>
+        <button type="button" role="tab" aria-selected="false" data-leo="3">III chwyt</button>
+        <button type="button" role="tab" aria-selected="false" data-leo="4">IV chwyt</button>
+      </div>
+      <div class="card" id="leoPanel" role="tabpanel"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ SKALA BISHOPA ============ -->
+<section id="bishop"><div class="wrap">
+  <h2>Skala Bishopa — ocena dojrzałości szyjki macicy (0–13 pkt)</h2>
+  <p class="lead">Interaktywny kalkulator i tabela referencyjna przed kwalifikacją do preindukcji lub indukcji porodu. Kliknij poszczególne cechy z badania wewnętrznego:</p>
+
+  <div class="bishop-grid">
+    <div class="bishop-rows" id="bishopRows"></div>
+    <div class="bishop-score" id="bishopOut" role="status" aria-live="polite"></div>
+  </div>
+</div></section>
+
+<!-- ============ KTG FIGO 2015 ============ -->
+<section id="ktg"><div class="wrap">
+  <h2>KTG według klasyfikacji FIGO 2015</h2>
+  <p class="lead">Trzystopniowa klasyfikacja śródporodowego zapisu kardiotokograficznego oraz interaktywne porównanie kluczowych wzorców krzywych FHR i TOCO.</p>
+
+  <div class="tw" style="margin-bottom:1.3rem"><table id="figoTable"></table></div>
+
+  <div class="ctg-card">
+    <div class="tabs" id="ctgTabs" role="tablist" aria-label="Wzorce zapisu KTG">
+      <button type="button" role="tab" aria-selected="true" data-ctg="normal">Prawidłowy</button>
+      <button type="button" role="tab" aria-selected="false" data-ctg="early">Deceleracje wczesne</button>
+      <button type="button" role="tab" aria-selected="false" data-ctg="late">Deceleracje późne</button>
+      <button type="button" role="tab" aria-selected="false" data-ctg="variable">Deceleracje zmienne</button>
+      <button type="button" role="tab" aria-selected="false" data-ctg="sinusoidal">Sinusoidalny</button>
+    </div>
+    <figure class="fig wide scroll" style="margin:0;border:0;box-shadow:none;padding:0">
+      <svg class="ctg-svg min" id="ctgSvg" viewBox="0 0 580 246" role="img" aria-label="Schemat porównawczy krzywej KTG (FHR i TOCO)"></svg>
+    </figure>
+    <div id="ctgDesc"></div>
+  </div>
+</div></section>
+
+<!-- ============ POŁÓG ============ -->
+<section id="polog"><div class="wrap">
+  <h2>Połóg fizjologiczny i patologiczny (6 tygodni po porodzie)</h2>
+  <p class="lead">Czas cofania się zmian ciążowych (inwolucji) oraz rozpoczęcia laktacji. Najważniejsze powikłania to PPH wtórny, zakażenia (endometritis, mastitis), ŻChZZ i zaburzenia nastroju.</p>
+
+  <div class="grid2">
+    <div class="tcard g">
+      <h3>Połóg fizjologiczny — normy do zapamiętania</h3>
+      <ul>
+        <li><b>Inwolucja dna macicy:</b> tuż po porodzie na wysokości pępka (lub 1–2 palce poniżej), obniża się o ok. 1 palec (~1–1,5 cm) dziennie; w <b>10.–14. dobie</b> chowa się za spojeniem łonowym (niepalpacyjna przez powłoki!).</li>
+        <li><b>Odchody połogowe (lochia):</b>
+          <em>lochia rubra</em> (krwiste, dni 1–3/4) → <em>lochia serosa</em> (różowo-brązowe, dni 4–10) → <em>lochia alba</em> (żółtawo-białe, 2.–6. tydz.).</li>
+        <li><b>Nawał pokarmu:</b> 2.–5. doba, obustronne przepełnienie piersi bez wysokiej gorączki — wymaga częstego przystawiania, nie antybiotyku.</li>
+        <li><b>Baby blues:</b> 3.–10. doba, chwiejność emocjonalna, ustępuje samoistnie do 2 tygodni (nie mylić z depresją poporodową!).</li>
+      </ul>
+    </div>
+    <div class="tcard r">
+      <h3>Połóg patologiczny — stany alarmowe</h3>
+      <ul>
+        <li><b>Zapalenie błony śluzowej macicy (endometritis):</b> gorączka &gt;38 °C (szczególnie po CC!), <b>tkliwa, źle obkurczona macica</b>, cuchnące odchody → antybiotykoterapia szerokospektralna i.v. (klindamycyna + gentamycyna lub amoksycylina/klawulanian).</li>
+        <li><b>Zapalenie piersi (mastitis):</b> 2.–4. tydz., jednostronny, klinowaty rumień i ból + gorączka &gt;38,5 °C (<em>S. aureus</em>) → antybiotyk przeciwgronkowcowy + <b>kontynuacja karmienia</b>.</li>
+        <li><b>ŻChZZ (DVT / ZP):</b> ryzyko najwyższe w pierwszych 6 tygodniach połogu (20–60× wyższe niż poza ciążą) — asymetryczny obrzęk kończyny lub duszność = pilna diagnostyka.</li>
+        <li><b>Depresja / psychoza poporodowa:</b> objawy &gt;2 tyg. (depresja, skala EPDS) lub urojenia/omamy w pierwszych dniach (psychoza = stan nagły psychiatryczny!).</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ ZADANIA ============ -->
+<section id="zadania"><div class="wrap">
+  <h2>Zadania kliniczno-egzaminacyjne (synchronizowane z Hubem)</h2>
+  <p class="lead">Rozwiąż 5 przypadków z modułów [4–5]. Odpowiedzi automatycznie synchronizują się z postępem w Hubie (<code>fizjologia-q1</code>–<code>fizjologia-q5</code>).</p>
+  <div class="qtools">
+    <div class="filters" id="qFilters" style="margin:0"></div>
+    <span class="sp"></span>
+    <button class="btn o" id="resetQ" type="button">Resetuj</button>
+  </div>
+  <div id="quiz"></div>
+  <div class="score" id="score" role="status">Wynik: 0 / 0</div>
+</div></section>
+
+<!-- ============ KLUCZ VS WYTYCZNE ============ -->
+<section id="klucz"><div class="wrap">
+  <h2>Podwójna prawda: pod zaliczenie kontra aktualnie klinicznie</h2>
+  <p class="lead">Najważniejsze rozbieżności między starszymi podręcznikami/kluczami a aktualnymi wytycznymi WHO 2018, FIGO 2015, PTGiP i Standardem MZ.</p>
+  <div class="dual-list" id="dualCards"></div>
+</div></section>
+
+<!-- ============ PUŁAPKI ============ -->
+<section id="pulapki"><div class="wrap">
+  <h2>Red flags, perełki i pułapki egzaminacyjne</h2>
+  <div class="grid3">
+    <div class="callout red">
+      <b class="k">Red flags</b>
+      <ul class="tight">
+        <li>KTG: deceleracje późne, bradykardia &lt;100/min, zmienność &lt;5/min &gt;50 min lub zapis sinusoidalny</li>
+        <li>Gorączka + tkliwa, nieobkurczona macica po CC = endometritis</li>
+        <li>Brak oddzielenia łożyska &gt;30 min po porodzie (III okres)</li>
+        <li>Nagła duszność / ból łydki w połogu = ZP / DVT</li>
+        <li>Urojenia i bezsenność w 1. tyg. połogu = psychoza poporodowa</li>
+      </ul>
+    </div>
+    <div class="callout green">
+      <b class="k">High-yield</b>
+      <ul class="tight">
+        <li>Kalendarz MZ: 11–13+6 USG I, 18–22 USG II, 24–28 OGTT 75 g, 28–30 anty-D, 35–37 GBS</li>
+        <li>IV chwyt Leopolda — jedyny twarzą do stóp pacjentki</li>
+        <li>KTG: Późne = łożysko · Zmienne = pępowina · Wczesne = główka</li>
+        <li>Mastitis: antybiotyk przeciwgronkowcowy + kontynuuj karmienie</li>
+        <li>Dno macicy chowa się za spojeniem łonowym ok. 10.–14. doby</li>
+      </ul>
+    </div>
+    <div class="callout amber">
+      <b class="k">Klasyczne pułapki</b>
+      <ul class="tight">
+        <li>Rozpoznanie „braku postępu porodu” przy rozwarciu 3–4 cm (faza utajona!)</li>
+        <li>Indukcja oksytocyną przy szyjce z wynikiem Bishopa &lt;6 pkt bez preindukcji</li>
+        <li>Leczenie dodatniego GBS doustnie w 36. t.c. zamiast i.v. śródporodowo</li>
+        <li>Odstawienie dziecka od piersi w zapaleniu piersi (mastitis)</li>
+        <li>Mylenie fizjologicznej hemodylucji lub łagodnej leukocytozy z chorobą</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+</main>
+
+<footer id="zrodla"><div class="wrap">
+  <h2>Źródła i zastrzeżenie edukacyjne</h2>
+  <ul class="tight" id="srcList" style="margin-top:.5rem"></ul>
+  <p class="small" style="margin-top:.9rem">Materiał ma wyłącznie charakter edukacyjny do nauki na V roku medycyny. Nie zastępuje Standardu Organizacyjnego Opieki Okołoporodowej MZ, rekomendacji PTGiP/FIGO ani decyzji klinicznej przy łóżku pacjentki.</p>
+</div></footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="../atlas-hub-sync.js"></script>
+</body>
+</html>
