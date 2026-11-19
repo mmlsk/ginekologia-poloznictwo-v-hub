@@ -12,6 +12,65 @@
     } = ctx;
 
     const CALC_KEY = 'ginpol_hub_calc_v1';
+    let resetArmTimer = null;
+
+    const svgIco = (body) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${body}</svg>`;
+    const ICO = {
+      calendar: svgIco('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+      scales: svgIco('<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>'),
+      emergency: svgIco('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'),
+      orders: svgIco('<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>'),
+      note: svgIco('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>'),
+      rotateCcw: svgIco('<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>'),
+      alert: svgIco('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+      arrowRight: svgIco('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'),
+      close: svgIco('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>')
+    };
+
+    const CARD_H2_STYLE = 'font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0';
+    const SR_ONLY_STYLE = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+
+    function resolveDrugMod(d) {
+      if (d && Array.isArray(d.mods) && d.mods.length) return String(d.mods[0]);
+      const id = String((d && d.id) || '').toLowerCase();
+      const cat = String((d && d.category) || '').toLowerCase();
+      if (id === 'mgso4' || id === 'labetalol' || id === 'nifedipine' || cat === 'nadcisnienie' || cat === 'antihypertensive' || cat === 'emergency_ob') return '2';
+      if (id === 'oxytocin' || id === 'txa' || id === 'carbetocin' || id === 'misoprostol' || cat === 'pph' || cat === 'uterotonic' || cat === 'hemostatic') return '1';
+      if (id === 'atosiban' || id === 'betamethasone' || id === 'antid' || id === 'anti_d' || cat === 'porod' || cat === 'fetal_maturation') return '7';
+      if (id === 'methotrexate') return '3';
+      return '1';
+    }
+
+    function resolveChallengeMod(ch) {
+      if (ch && ch.mod) return String(ch.mod);
+      if (ch && Array.isArray(ch.mods) && ch.mods.length) return String(ch.mods[0]);
+      const key = `${(ch && ch.id) || ''} ${(ch && ch.drugId) || ''}`.toLowerCase();
+      if (key.includes('pph') || key.includes('oxytocin') || key.includes('txa')) return '1';
+      if (key.includes('eclamps') || key.includes('mgso4') || key.includes('labetalol')) return '2';
+      if (key.includes('preterm') || key.includes('betameth') || key.includes('atosiban')) return '7';
+      if (key.includes('gbs')) return '5';
+      return '1';
+    }
+
+    function buildFocusSelector(el) {
+      if (!el || !main || !main.contains(el)) return null;
+      if (el.id) {
+        const safeId = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
+          ? CSS.escape(el.id)
+          : el.id.replace(/([^\w-])/g, '\\$1');
+        return '#' + safeId;
+      }
+      const cls = ['calc-tab-btn', 'js-lmp-preset', 'js-cycle-pill', 'js-crl-preset',
+        'js-bishop-btn', 'js-apgar-btn', 'js-rmi-feat', 'js-rmi-meno', 'js-rmi-ca-preset',
+        'js-drug-cat', 'js-ord-chip', 'js-ord-step', 'js-ord-opt']
+        .find(c => el.classList && el.classList.contains(c));
+      if (!cls) return null;
+      const attrs = ['ctab', 'days', 'cycle', 'crl', 'key', 'val', 'idx', 'post', 'cat', 'step', 'opt']
+        .filter(a => el.dataset && el.dataset[a] !== undefined)
+        .map(a => `[data-${a}="${String(el.dataset[a]).replace(/"/g, '\\"')}"]`)
+        .join('');
+      return attrs ? `.${cls}${attrs}` : null;
+    }
 
     function isoDaysAgo(days) {
       const now = new Date();
@@ -486,7 +545,8 @@
         regimen: d.regimen || d.protocol || d.schedule || '',
         antidote: d.antidote || '',
         warning: d.warning || d.alert || d.contra || '',
-        notes: d.notes || d.monitoring || d.pearl || ''
+        notes: d.notes || d.monitoring || d.pearl || '',
+        mods: Array.isArray(d.mods) ? d.mods : (d.mod ? [d.mod] : [])
       }));
     }
 
@@ -496,12 +556,16 @@
         ? meta.PRESCRIPTION_CHALLENGES
         : DEFAULT_ORDER_CHALLENGES;
       return raw.map((ch, idx) => {
+        const mod = ch.mod || (Array.isArray(ch.mods) && ch.mods[0]) || '';
+        const drugId = ch.drugId || '';
         if (Array.isArray(ch.steps) && ch.steps.length) {
           return {
             id: ch.id || ('ord-' + idx),
             title: ch.title || ch.name || ('Przypadek ' + (idx + 1)),
             badge: ch.badge || ch.cat || 'Zlecenia OB/GYN',
             vignette: ch.vignette || ch.case || ch.desc || '',
+            mod,
+            drugId,
             steps: ch.steps.map(st => ({
               prompt: st.prompt || st.question || st.q || '',
               opts: Array.isArray(st.opts) ? st.opts : (Array.isArray(st.options) ? st.options : []),
@@ -515,6 +579,8 @@
           title: ch.title || ch.name || ('Przypadek ' + (idx + 1)),
           badge: ch.badge || ch.cat || 'Zlecenia OB/GYN',
           vignette: ch.vignette || ch.case || ch.desc || '',
+          mod,
+          drugId,
           steps: [{
             prompt: ch.prompt || ch.question || ch.stem || 'Wybierz prawidłowe zlecenie kliniczne:',
             opts: Array.isArray(ch.opts) ? ch.opts : (Array.isArray(ch.options) ? ch.options : []),
@@ -582,7 +648,7 @@
           <div class="calc-param-grid">
             <div class="calc-field-group">
               <label for="calcLmpInput" style="font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Pierwszy dzień ostatniej miesiączki (OM)</label>
-              <input id="calcLmpInput" type="date" value="${esc(CALC_STATE.lmpIso)}" style="padding:.6rem .8rem;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-weight:700;font-size:1rem">
+              <input id="calcLmpInput" type="date" value="${esc(CALC_STATE.lmpIso)}" style="min-height:44px;padding:.6rem .8rem;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-weight:700;font-size:1rem">
               <div class="calc-quick-pills">
                 <button type="button" class="calc-pill js-lmp-preset" data-days="84">12 Hbd</button>
                 <button type="button" class="calc-pill js-lmp-preset" data-days="140">20 Hbd</button>
@@ -622,19 +688,19 @@
         <div class="lab-calc-box">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
             <div>
-              <h3 style="margin:0">Weryfikacja USG I trymestru (CRL wg Robinsona)</h3>
+              <h2 style="${CARD_H2_STYLE}">Weryfikacja USG I trymestru (CRL wg Robinsona)</h2>
               <p style="font-size:.86rem;color:var(--muted);margin-top:.2rem">Opcjonalnie wpisz pomiar CRL (10–84 mm) oraz datę badania USG, aby sprawdzić wskazanie do korekty TP (&gt;5–7 dni).</p>
             </div>
-            ${CALC_STATE.crlMm !== '' ? `<button type="button" class="btn sec sm" id="btnClearCrl">Wyczyść CRL</button>` : ''}
+            ${CALC_STATE.crlMm !== '' ? `<button type="button" class="btn sec sm" id="btnClearCrl">${ICO.close}<span>Wyczyść CRL</span></button>` : ''}
           </div>
           <div class="lab-inputs-grid">
             <div class="lab-input-group">
               <label for="calcCrlInput">CRL (mm, zakres 10–84)</label>
-              <input id="calcCrlInput" type="number" min="10" max="84" step="1" placeholder="np. 56" value="${esc(CALC_STATE.crlMm)}">
+              <input id="calcCrlInput" type="number" min="10" max="84" step="1" placeholder="np. 56" value="${esc(CALC_STATE.crlMm)}" style="min-height:44px">
             </div>
             <div class="lab-input-group">
               <label for="calcUsgDateInput">Data badania USG I trym.</label>
-              <input id="calcUsgDateInput" type="date" value="${esc(CALC_STATE.usgDateIso)}">
+              <input id="calcUsgDateInput" type="date" value="${esc(CALC_STATE.usgDateIso)}" style="min-height:44px">
             </div>
           </div>
           <div class="calc-quick-pills">
@@ -650,8 +716,8 @@
         ${milestones.length ? `
         <div class="scale-card">
           <div class="scale-header">
-            <h3 style="margin:0">Okna kluczowych badań w tej ciąży (PTGiP / MZ)</h3>
-            <button type="button" class="btn sec sm" id="btnCopyNaegele">Zapisz do notatek</button>
+            <h2 style="${CARD_H2_STYLE}">Okna kluczowych badań w tej ciąży (PTGiP / MZ)</h2>
+            <button type="button" class="btn sec sm" id="btnCopyNaegele">${ICO.note}<span>Zapisz do notatek</span></button>
           </div>
           <div style="display:grid;gap:.45rem">
             ${milestones.map(ms => `
@@ -711,12 +777,12 @@
         <div class="scale-card">
           <div class="scale-header">
             <div>
-              <h3 style="margin:0">Skala Bishopa (dojrzałość szyjki przed indukcją)</h3>
+              <h2 style="${CARD_H2_STYLE}">Skala Bishopa (dojrzałość szyjki przed indukcją)</h2>
               <div style="font-size:.84rem;color:var(--muted)">Ocena przed indukcją porodu (0–13 pkt)</div>
             </div>
             <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
               <div class="scale-score-badge" style="color:${bColor};background:${bBg}">${bRes.score} / ${bRes.max} pkt</div>
-              <button type="button" class="btn sec sm" id="btnCopyBishop">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyBishop">${ICO.note}<span>Zapisz do notatek</span></button>
             </div>
           </div>
           ${bishopRows.map(row => `
@@ -739,12 +805,12 @@
         <div class="scale-card">
           <div class="scale-header">
             <div>
-              <h3 style="margin:0">Skala Apgar (ocena noworodka w 1. i 5. min)</h3>
+              <h2 style="${CARD_H2_STYLE}">Skala Apgar (ocena noworodka w 1. i 5. min)</h2>
               <div style="font-size:.84rem;color:var(--muted)">Nie opóźniaj rozpoczęcia resuscytacji NLS w oczekiwaniu na ocenę 1. minuty!</div>
             </div>
             <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
               <div class="scale-score-badge" style="color:${aColor};background:${aBg}">${aRes.score} / ${aRes.max} pkt</div>
-              <button type="button" class="btn sec sm" id="btnCopyApgar">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyApgar">${ICO.note}<span>Zapisz do notatek</span></button>
             </div>
           </div>
           ${apgarRows.map(row => `
@@ -767,12 +833,12 @@
         <div class="scale-card">
           <div class="scale-header">
             <div>
-              <h3 style="margin:0">Wskaźnik RMI I (ocena ryzyka złośliwości guza jajnika)</h3>
+              <h2 style="${CARD_H2_STYLE}">Wskaźnik RMI I (ocena ryzyka złośliwości guza jajnika)</h2>
               <div style="font-size:.84rem;color:var(--muted)">Wzór Jacobsa: RMI = U x M x CA-125 (próg wysokiego ryzyka &gt;=200)</div>
             </div>
             <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
               <div class="scale-score-badge" style="color:${rColor};background:${rBg}">RMI ${esc(rRes.rmi)}</div>
-              <button type="button" class="btn sec sm" id="btnCopyRmi">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyRmi">${ICO.note}<span>Zapisz do notatek</span></button>
             </div>
           </div>
 
@@ -780,8 +846,8 @@
             <div style="font-weight:700;font-size:.88rem;color:var(--ink)">Cechy USG (U = ${rRes.U})<div style="font-size:.76rem;color:var(--muted);font-weight:500">0 cech: U=0 | 1: U=1 | >=2: U=3</div></div>
             <div style="display:grid;gap:.4rem">
               ${rmiFeatLabels.map((lbl, idx) => `
-                <label style="display:flex;align-items:center;gap:.55rem;font-size:.88rem;cursor:pointer;padding:.35rem .6rem;border-radius:8px;background:var(--bg);border:1px solid ${r.features[idx] ? 'var(--teal)' : 'var(--line-2)'}">
-                  <input type="checkbox" class="js-rmi-feat" data-idx="${idx}" ${r.features[idx] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--teal)">
+                <label style="display:flex;align-items:center;gap:.55rem;min-height:44px;font-size:.88rem;cursor:pointer;padding:.4rem .65rem;border-radius:8px;background:var(--bg);border:1px solid ${r.features[idx] ? 'var(--teal)' : 'var(--line-2)'}">
+                  <input type="checkbox" class="js-rmi-feat" data-idx="${idx}" ${r.features[idx] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--teal);flex-shrink:0">
                   <span>${esc(lbl)}</span>
                 </label>
               `).join('')}
@@ -800,7 +866,7 @@
             <div style="font-weight:700;font-size:.88rem;color:var(--ink)">Stężenie CA-125 (U/ml)</div>
             <div>
               <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-                <input id="calcRmiCa125" type="number" min="0" max="50000" step="1" value="${esc(r.ca125)}" aria-label="CA-125 w U/ml" style="width:140px;padding:.5rem .7rem;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-weight:800;font-size:1rem">
+                <input id="calcRmiCa125" type="number" min="0" max="50000" step="1" value="${esc(r.ca125)}" aria-label="CA-125 w U/ml" style="width:140px;min-height:44px;padding:.5rem .7rem;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-weight:800;font-size:1rem">
                 <div class="calc-quick-pills" style="margin-top:0">
                   ${[15, 35, 85, 220, 650].map(v => `<button type="button" class="calc-pill js-rmi-ca-preset" data-val="${v}">${v} U/ml</button>`).join('')}
                 </div>
@@ -817,12 +883,7 @@
       `;
     }
 
-    function renderNagleTab() {
-      const drugs = getDrugsList();
-      const catMap = new Map([['all', 'Wszystkie']]);
-      drugs.forEach(d => {
-        if (!catMap.has(d.category)) catMap.set(d.category, d.categoryLabel);
-      });
+    function renderDrugResultsHtml(drugs) {
       const q = typeof norm === 'function' ? norm(CALC_STATE.drugSearch) : String(CALC_STATE.drugSearch || '').toLowerCase();
       const filtered = drugs.filter(d => {
         if (CALC_STATE.drugCat !== 'all' && d.category !== CALC_STATE.drugCat) return false;
@@ -831,46 +892,56 @@
         return (typeof norm === 'function' ? norm(hay) : hay.toLowerCase()).includes(q);
       });
 
+      return filtered.length ? `
+        <div class="drug-grid">
+          ${filtered.map(d => `
+            <article class="drug-card">
+              <div class="drug-header">
+                <div>
+                  <div class="drug-formula">${esc(d.categoryLabel)}</div>
+                  <h2 class="drug-title" style="margin:.15rem 0 0">${esc(d.name)}</h2>
+                </div>
+                <button type="button" class="btn sec sm js-copy-drug" data-id="${esc(d.id)}" title="Zapisz kartę leku do notatek">${ICO.note}<span>Do notatek</span></button>
+              </div>
+              ${d.indication ? `<div class="drug-notes"><strong>Wskazania:</strong> ${esc(d.indication)}</div>` : ''}
+              <div class="drug-result-box">
+                <div>
+                  <div class="drug-formula">Dawkowanie</div>
+                  <div style="font-weight:800;font-size:1.02rem;color:var(--teal-d);margin-top:.15rem">${esc(d.dose)}</div>
+                  ${d.route ? `<div class="drug-formula" style="margin-top:.2rem">Droga: ${esc(d.route)}</div>` : ''}
+                </div>
+              </div>
+              ${d.regimen ? `<div class="drug-notes">${esc(d.regimen)}</div>` : ''}
+              ${d.antidote ? `<div style="background:var(--green-l);border:1px solid var(--green);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;color:var(--ink)"><strong>Antidotum / odwrócenie:</strong> ${esc(d.antidote)}</div>` : ''}
+              ${d.warning ? `<div class="drug-alert">Uwaga kliniczna: ${esc(d.warning)}</div>` : ''}
+              ${d.notes ? `<div class="drug-formula" style="color:var(--ink-2)">${esc(d.notes)}</div>` : ''}
+            </article>
+          `).join('')}
+        </div>
+      ` : `<div class="card"><p>Brak leków pasujących do filtra „${esc(CALC_STATE.drugSearch)}”.</p></div>`;
+    }
+
+    function renderNagleTab() {
+      const drugs = getDrugsList();
+      const catMap = new Map([['all', 'Wszystkie']]);
+      drugs.forEach(d => {
+        if (!catMap.has(d.category)) catMap.set(d.category, d.categoryLabel);
+      });
+
       return `
         <div class="calc-param-card" style="padding:1rem 1.2rem">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-bottom:.75rem">
             <div class="imaging-filter-pills" role="tablist" aria-label="Filtr kategorii leków OB">
               ${Array.from(catMap.entries()).map(([k, lbl]) => `
-                <button type="button" class="imaging-filter-btn js-drug-cat ${CALC_STATE.drugCat === k ? 'active' : ''}" data-cat="${esc(k)}">${esc(lbl)}</button>
+                <button type="button" role="tab" aria-selected="${CALC_STATE.drugCat === k}" class="imaging-filter-btn js-drug-cat ${CALC_STATE.drugCat === k ? 'active' : ''}" data-cat="${esc(k)}" style="min-height:44px;display:inline-flex;align-items:center">${esc(lbl)}</button>
               `).join('')}
             </div>
-            <input id="calcDrugSearch" type="search" value="${esc(CALC_STATE.drugSearch)}" placeholder="Szukaj leku, antidotum, wskazania..." aria-label="Szukaj leku OB" style="min-width:220px;flex:1;max-width:320px;padding:.5rem .8rem;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:.92rem">
+            <input id="calcDrugSearch" type="search" value="${esc(CALC_STATE.drugSearch)}" placeholder="Szukaj leku, antidotum, wskazania..." aria-label="Szukaj leku OB" style="min-width:220px;min-height:44px;flex:1;max-width:320px;padding:.5rem .8rem;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:.92rem">
           </div>
           <div style="font-size:.82rem;color:var(--muted)">Charakter edukacyjny (PTGiP / FIGO) — przed podaniem leku przy łóżku pacjentki zweryfikuj dawkę i przeciwwskazania z ChPL.</div>
         </div>
 
-        ${filtered.length ? `
-          <div class="drug-grid">
-            ${filtered.map(d => `
-              <article class="drug-card">
-                <div class="drug-header">
-                  <div>
-                    <div class="drug-formula">${esc(d.categoryLabel)}</div>
-                    <h3 class="drug-title" style="margin:.15rem 0 0">${esc(d.name)}</h3>
-                  </div>
-                  <button type="button" class="btn sec sm js-copy-drug" data-id="${esc(d.id)}" title="Zapisz kartę leku do notatek">Do notatek</button>
-                </div>
-                ${d.indication ? `<div class="drug-notes"><strong>Wskazania:</strong> ${esc(d.indication)}</div>` : ''}
-                <div class="drug-result-box">
-                  <div>
-                    <div class="drug-formula">Dawkowanie</div>
-                    <div style="font-weight:800;font-size:1.02rem;color:var(--teal-d);margin-top:.15rem">${esc(d.dose)}</div>
-                    ${d.route ? `<div class="drug-formula" style="margin-top:.2rem">Droga: ${esc(d.route)}</div>` : ''}
-                  </div>
-                </div>
-                ${d.regimen ? `<div class="drug-notes">${esc(d.regimen)}</div>` : ''}
-                ${d.antidote ? `<div style="background:var(--green-l);border:1px solid var(--green);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;color:var(--ink)"><strong>Antidotum / odwrócenie:</strong> ${esc(d.antidote)}</div>` : ''}
-                ${d.warning ? `<div class="drug-alert">Uwaga kliniczna: ${esc(d.warning)}</div>` : ''}
-                ${d.notes ? `<div class="drug-formula" style="color:var(--ink-2)">${esc(d.notes)}</div>` : ''}
-              </article>
-            `).join('')}
-          </div>
-        ` : `<div class="card"><p>Brak leków pasujących do filtra „${esc(CALC_STATE.drugSearch)}”.</p></div>`}
+        <div id="calcDrugResults">${renderDrugResultsHtml(drugs)}</div>
       `;
     }
 
@@ -894,14 +965,17 @@
           <div style="font-size:.88rem;font-weight:700;color:var(--ink-2)">
             Ukończono scenariuszy zleceń: <strong style="color:var(--teal-d)">${doneCount} / ${challenges.length}</strong> (${donePct}%)
           </div>
-          <button type="button" class="btn sec sm" id="btnResetOrders">Resetuj postęp treningu</button>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <span id="resetOrdersStatus" style="${SR_ONLY_STYLE}" aria-live="polite" aria-atomic="true"></span>
+            <button type="button" class="btn sec sm" id="btnResetOrders" data-armed="0">${ICO.rotateCcw}<span>Resetuj postęp treningu</span></button>
+          </div>
         </div>
 
         <div class="imaging-case-carousel" role="tablist" aria-label="Lista przypadków zleceń">
           ${challenges.map((c, cIdx) => {
             const solved = rState.chalDone.includes(c.id);
             return `
-              <button type="button" class="imaging-case-chip js-ord-chip ${cIdx === idx ? 'active' : ''} ${solved ? 'solved' : ''}" data-idx="${cIdx}">
+              <button type="button" role="tab" aria-selected="${cIdx === idx}" class="imaging-case-chip js-ord-chip ${cIdx === idx ? 'active' : ''} ${solved ? 'solved' : ''}" data-idx="${cIdx}">
                 <div class="imaging-case-chip-head">
                   <span style="font-weight:700;color:var(--teal-d)">${esc(c.badge)}</span>
                   <span style="font-weight:800;color:${solved ? 'var(--green)' : 'var(--muted)'}">${solved ? 'Zaliczono' : `${c.steps.length} kroki`}</span>
@@ -916,7 +990,7 @@
           <div class="scale-header">
             <div>
               <div class="drug-formula">${esc(ch.badge)} · Krok ${stepIdx + 1} z ${ch.steps.length}</div>
-              <h3 style="margin:.15rem 0 0">${esc(ch.title)}</h3>
+              <h2 style="${CARD_H2_STYLE};margin:.15rem 0 0">${esc(ch.title)}</h2>
             </div>
             <div style="display:flex;gap:.35rem;flex-wrap:wrap">
               ${ch.steps.map((_, sIdx) => {
@@ -959,12 +1033,12 @@
               <div style="font-size:.9rem;color:var(--ink)">${esc(step.why)}</div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-top:1rem">
-              <button type="button" class="btn sec sm" id="btnCopyOrderCase">Zapisz scenariusz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyOrderCase">${ICO.note}<span>Zapisz scenariusz do notatek</span></button>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
                 ${stepIdx < ch.steps.length - 1
-                  ? `<button type="button" class="btn pri sm" id="btnOrdNextStep">Następny krok</button>`
+                  ? `<button type="button" class="btn pri sm" id="btnOrdNextStep"><span>Następny krok</span>${ICO.arrowRight}</button>`
                   : (idx < challenges.length - 1
-                    ? `<button type="button" class="btn pri sm" id="btnOrdNextCase">Następny przypadek</button>`
+                    ? `<button type="button" class="btn pri sm" id="btnOrdNextCase"><span>Następny przypadek</span>${ICO.arrowRight}</button>`
                     : (allStepsDone ? `<span style="font-size:.86rem;font-weight:700;color:var(--green)">Koniec zestawu</span>` : '')
                   )}
               </div>
@@ -983,7 +1057,17 @@
         CALC_STATE.drugSearch = String(params.lek);
       }
 
-      const render = () => {
+      const render = (fallbackSelector) => {
+        if (resetArmTimer) {
+          clearTimeout(resetArmTimer);
+          resetArmTimer = null;
+        }
+        const active = document.activeElement;
+        const hadFocusInMain = !!(active && main && main.contains(active));
+        const focusSelector = hadFocusInMain ? buildFocusSelector(active) : null;
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+
         const tab = CALC_STATE.tab;
         let bodyHtml = '';
         if (tab === 'wiek') bodyHtml = renderWiekTab();
@@ -993,23 +1077,55 @@
 
         main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:980px">
           <div class="eyebrow">Narzędzia kliniczne OB/GYN</div>
-          <h2>Kalkulatory położnicze, skale i dawki ratunkowe</h2>
+          <h1 style="font-size:clamp(1.7rem,3.4vw,2.4rem);margin-bottom:.5rem">Kalkulatory położnicze, skale i dawki ratunkowe</h1>
           <p class="lead">Reguła Naegelego z weryfikacją CRL, skale Bishopa, Apgar i RMI, dawki ratunkowe PTGiP/FIGO (MgSO4, PPH, tokoliza, profilaktyka) oraz interaktywny trening zleceń klinicznych.</p>
 
           <div class="calc-tab-nav" id="calcTabNav" role="tablist" aria-label="Zakładki kalkulatora OB/GYN">
-            <button type="button" role="tab" aria-selected="${tab === 'wiek'}" class="calc-tab-btn ${tab === 'wiek' ? 'active' : ''}" data-ctab="wiek">Wiek ciążowy i Naegele</button>
-            <button type="button" role="tab" aria-selected="${tab === 'skale'}" class="calc-tab-btn ${tab === 'skale' ? 'active' : ''}" data-ctab="skale">Skale: Bishop, Apgar, RMI</button>
-            <button type="button" role="tab" aria-selected="${tab === 'nagle'}" class="calc-tab-btn ${tab === 'nagle' ? 'active' : ''}" data-ctab="nagle">Dawki ratunkowe i protokoły OB</button>
-            <button type="button" role="tab" aria-selected="${tab === 'recepty'}" class="calc-tab-btn ${tab === 'recepty' ? 'active' : ''}" data-ctab="recepty">Trening zleceń klinicznych</button>
+            <button type="button" role="tab" aria-selected="${tab === 'wiek'}" class="calc-tab-btn ${tab === 'wiek' ? 'active' : ''}" data-ctab="wiek">${ICO.calendar}<span>Wiek ciążowy i Naegele</span></button>
+            <button type="button" role="tab" aria-selected="${tab === 'skale'}" class="calc-tab-btn ${tab === 'skale' ? 'active' : ''}" data-ctab="skale">${ICO.scales}<span>Skale: Bishop, Apgar, RMI</span></button>
+            <button type="button" role="tab" aria-selected="${tab === 'nagle'}" class="calc-tab-btn ${tab === 'nagle' ? 'active' : ''}" data-ctab="nagle">${ICO.emergency}<span>Dawki ratunkowe i protokoły OB</span></button>
+            <button type="button" role="tab" aria-selected="${tab === 'recepty'}" class="calc-tab-btn ${tab === 'recepty' ? 'active' : ''}" data-ctab="recepty">${ICO.orders}<span>Trening zleceń klinicznych</span></button>
           </div>
 
           <div id="calcTabBody">${bodyHtml}</div>
         </div></section>`;
 
         bindEvents(render);
+
+        if (hadFocusInMain) {
+          if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+            window.scrollTo(scrollX, scrollY);
+          }
+          let target = focusSelector ? main.querySelector(focusSelector) : null;
+          if (!target || target.disabled) {
+            target = fallbackSelector ? main.querySelector(fallbackSelector) : null;
+          }
+          if (target && !target.disabled && typeof target.focus === 'function') {
+            target.focus({ preventScroll: true });
+          }
+        }
       };
 
       render();
+    }
+
+    function bindDrugCardEvents() {
+      $$('.js-copy-drug').forEach(btn => {
+        btn.onclick = () => {
+          const d = getDrugsList().find(x => x.id === btn.dataset.id);
+          if (!d) return;
+          const md = [
+            `# ${d.name} (${d.categoryLabel})`,
+            d.indication ? `- **Wskazania:** ${d.indication}` : '',
+            `- **Dawkowanie:** ${d.dose}${d.route ? ` (${d.route})` : ''}`,
+            d.regimen ? `- **Schemat:** ${d.regimen}` : '',
+            d.antidote ? `- **Antidotum:** ${d.antidote}` : '',
+            d.warning ? `- **Ostrzeżenia:** ${d.warning}` : '',
+            d.notes ? `- **Uwagi:** ${d.notes}` : ''
+          ].filter(Boolean).join('\n');
+          saveNoteEntry(`Protokół OB: ${d.name}`, md, resolveDrugMod(d));
+        };
+      });
     }
 
     function bindEvents(render) {
@@ -1086,7 +1202,7 @@
         clearCrlBtn.onclick = () => {
           CALC_STATE.crlMm = '';
           saveCalcState();
-          render();
+          render('#calcCrlInput');
         };
       }
       const copyNaegeleBtn = $('#btnCopyNaegele');
@@ -1101,7 +1217,7 @@
             `- **Aktualny wiek ciążowy:** ${res.gaLabel} (trymestr ${res.trimester}) — ${res.termStatus}`,
             CALC_STATE.crlMm ? `- **CRL I trym.:** ${CALC_STATE.crlMm} mm (data USG: ${formatPlDate(CALC_STATE.usgDateIso)})` : ''
           ].filter(Boolean).join('\n');
-          saveNoteEntry(`Wiek ciążowy ${res.gaLabel} (TP ${formatPlDate(res.eddIso)})`, md, '1');
+          saveNoteEntry(`Wiek ciążowy ${res.gaLabel} (TP ${formatPlDate(res.eddIso)})`, md, '4');
         };
       }
 
@@ -1118,7 +1234,7 @@
         copyBishopBtn.onclick = () => {
           const r = computeBishop(CALC_STATE.bishop);
           const md = `# Skala Bishopa: ${r.score}/${r.max} pkt\n- **Interpretacja:** ${r.interpretation}\n- Składowe: rozwarcie ${CALC_STATE.bishop.dilation}, skrócenie ${CALC_STATE.bishop.effacement}, punkt prowadzący ${CALC_STATE.bishop.station}, konsystencja ${CALC_STATE.bishop.consistency}, położenie ${CALC_STATE.bishop.position}.`;
-          saveNoteEntry(`Skala Bishopa (${r.score}/13 pkt)`, md, '4');
+          saveNoteEntry(`Skala Bishopa (${r.score}/13 pkt)`, md, '5');
         };
       }
 
@@ -1134,7 +1250,7 @@
         copyApgarBtn.onclick = () => {
           const r = computeApgar(CALC_STATE.apgar);
           const md = `# Skala Apgar: ${r.score}/${r.max} pkt\n- **Ocena:** ${r.status}\n- Składowe: skóra ${CALC_STATE.apgar.appearance}, HR ${CALC_STATE.apgar.pulse}, reakcja ${CALC_STATE.apgar.grimace}, napięcie ${CALC_STATE.apgar.activity}, oddech ${CALC_STATE.apgar.respiration}.`;
-          saveNoteEntry(`Skala Apgar (${r.score}/10 pkt)`, md, '4');
+          saveNoteEntry(`Skala Apgar (${r.score}/10 pkt)`, md, '5');
         };
       }
 
@@ -1174,7 +1290,7 @@
           const featCount = CALC_STATE.rmi.features.filter(Boolean).length;
           const r = computeRmi({ ultrasoundFeatures: featCount, postmenopausal: CALC_STATE.rmi.postmenopausal, ca125: CALC_STATE.rmi.ca125 });
           const md = `# Wskaźnik RMI I = ${r.rmi}\n- Wzór: U (${r.U}) x M (${r.M}) x CA-125 (${r.ca125} U/ml)\n- **Kwalifikacja:** ${r.label}`;
-          saveNoteEntry(`Wskaźnik RMI I = ${r.rmi}`, md, '10');
+          saveNoteEntry(`Wskaźnik RMI I = ${r.rmi}`, md, '12');
         };
       }
 
@@ -1191,30 +1307,14 @@
         drugSearch.oninput = () => {
           CALC_STATE.drugSearch = drugSearch.value;
           saveCalcState();
-          render();
-          const refreshed = $('#calcDrugSearch');
-          if (refreshed) {
-            refreshed.focus();
-            refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length);
+          const resultsEl = $('#calcDrugResults');
+          if (resultsEl) {
+            resultsEl.innerHTML = renderDrugResultsHtml(getDrugsList());
+            bindDrugCardEvents();
           }
         };
       }
-      $$('.js-copy-drug').forEach(btn => {
-        btn.onclick = () => {
-          const d = getDrugsList().find(x => x.id === btn.dataset.id);
-          if (!d) return;
-          const md = [
-            `# ${d.name} (${d.categoryLabel})`,
-            d.indication ? `- **Wskazania:** ${d.indication}` : '',
-            `- **Dawkowanie:** ${d.dose}${d.route ? ` (${d.route})` : ''}`,
-            d.regimen ? `- **Schemat:** ${d.regimen}` : '',
-            d.antidote ? `- **Antidotum:** ${d.antidote}` : '',
-            d.warning ? `- **Ostrzeżenia:** ${d.warning}` : '',
-            d.notes ? `- **Uwagi:** ${d.notes}` : ''
-          ].filter(Boolean).join('\n');
-          saveNoteEntry(`Protokół OB: ${d.name}`, md, '5');
-        };
-      });
+      bindDrugCardEvents();
 
       // Tab 4: Trening zleceń
       $$('.js-ord-chip').forEach(btn => {
@@ -1244,7 +1344,7 @@
             CALC_STATE.recepty.chalDone.push(ch.id);
           }
           saveCalcState();
-          render();
+          render('#btnOrdNextStep, #btnOrdNextCase, #btnCopyOrderCase');
         };
       });
       const nextStepBtn = $('#btnOrdNextStep');
@@ -1252,7 +1352,7 @@
         nextStepBtn.onclick = () => {
           CALC_STATE.recepty.chalStep = (CALC_STATE.recepty.chalStep || 0) + 1;
           saveCalcState();
-          render();
+          render('.js-ord-opt, .js-ord-step.active');
         };
       }
       const nextCaseBtn = $('#btnOrdNextCase');
@@ -1261,12 +1361,42 @@
           CALC_STATE.recepty.chalIdx = (CALC_STATE.recepty.chalIdx || 0) + 1;
           CALC_STATE.recepty.chalStep = 0;
           saveCalcState();
-          render();
+          render('.js-ord-opt, .js-ord-step.active');
         };
       }
       const resetOrdersBtn = $('#btnResetOrders');
       if (resetOrdersBtn) {
+        const disarmReset = () => {
+          if (resetArmTimer) {
+            clearTimeout(resetArmTimer);
+            resetArmTimer = null;
+          }
+          if (!resetOrdersBtn.isConnected) return;
+          resetOrdersBtn.dataset.armed = '0';
+          resetOrdersBtn.innerHTML = `${ICO.rotateCcw}<span>Resetuj postęp treningu</span>`;
+          resetOrdersBtn.style.borderColor = '';
+          resetOrdersBtn.style.color = '';
+          resetOrdersBtn.style.background = '';
+          const statusEl = $('#resetOrdersStatus');
+          if (statusEl) statusEl.textContent = '';
+        };
         resetOrdersBtn.onclick = () => {
+          if (resetOrdersBtn.dataset.armed !== '1') {
+            resetOrdersBtn.dataset.armed = '1';
+            resetOrdersBtn.innerHTML = `${ICO.alert}<span>Na pewno wyzerować? Kliknij ponownie</span>`;
+            resetOrdersBtn.style.borderColor = 'var(--red)';
+            resetOrdersBtn.style.color = 'var(--red-d)';
+            resetOrdersBtn.style.background = 'var(--red-l)';
+            const statusEl = $('#resetOrdersStatus');
+            if (statusEl) statusEl.textContent = 'Potwierdź wyzerowanie postępu treningu: kliknij przycisk ponownie w ciągu 4 sekund.';
+            if (resetArmTimer) clearTimeout(resetArmTimer);
+            resetArmTimer = setTimeout(disarmReset, 4000);
+            return;
+          }
+          if (resetArmTimer) {
+            clearTimeout(resetArmTimer);
+            resetArmTimer = null;
+          }
           CALC_STATE.recepty = { chalIdx: 0, chalStep: 0, chalAnswers: {}, chalDone: [] };
           saveCalcState();
           if (typeof toast === 'function') toast('Zresetowano postęp treningu zleceń.');
@@ -1283,7 +1413,7 @@
             ch.vignette,
             ...ch.steps.map((s, i) => `## Krok ${i + 1}: ${s.prompt}\n- **Poprawne zlecenie:** ${s.opts[s.key]}\n- **Uzasadnienie:** ${s.why}`)
           ].join('\n\n');
-          saveNoteEntry(`Zlecenia OB: ${ch.title}`, md, '5');
+          saveNoteEntry(`Zlecenia OB: ${ch.title}`, md, resolveChallengeMod(ch));
         };
       }
     }

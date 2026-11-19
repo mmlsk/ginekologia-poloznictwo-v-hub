@@ -5,6 +5,68 @@
   window.HUB_CLINICAL.patient = function (ctx) {
     const { $, $$, main, esc, pct, save, toast, getNotes, saveNotes } = ctx;
 
+    /* ---------- IKONY SVG UI CHROME (16x16, stroke="currentColor") ---------- */
+    const ICON_PATHS = {
+      alert: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+      clipboard: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+      activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+      heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+      droplet: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
+      zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+      wind: '<path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>',
+      thermometer: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>',
+      calc: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="8.01" y2="18"/><line x1="12" y1="18" x2="16" y2="18"/>',
+      scan: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+      check: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+      xcircle: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+      award: '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+      star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+      shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+      refresh: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+      bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>',
+      chevUp: '<polyline points="18 15 12 9 6 15"/>',
+      chevDown: '<polyline points="6 9 12 15 18 9"/>'
+    };
+
+    function ico(name, size) {
+      const sz = size || 16;
+      const p = ICON_PATHS[name] || ICON_PATHS.activity;
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-.18em">${p}</svg>`;
+    }
+
+    function escAttr(v) {
+      return (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
+        ? CSS.escape(String(v))
+        : String(v).replace(/["\\]/g, '\\$&');
+    }
+
+    function captureFocusSelector() {
+      const ae = document.activeElement;
+      if (!ae || !main.contains(ae)) return null;
+      if (ae.id) return '#' + escAttr(ae.id);
+      if (ae.dataset) {
+        const keys = ['ptab', 'opt'];
+        for (const k of keys) {
+          if (ae.dataset[k] !== undefined) {
+            const attr = 'data-' + k.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+            return `[${attr}="${escAttr(ae.dataset[k])}"]`;
+          }
+        }
+      }
+      if (ae.tagName === 'INPUT' && ae.name && ae.value) {
+        return `input[name="${escAttr(ae.name)}"][value="${escAttr(ae.value)}"]`;
+      }
+      return null;
+    }
+
+    function restoreFocus(sel, fallbackSel) {
+      const target = (sel && main.querySelector(sel)) || (fallbackSel && main.querySelector(fallbackSel));
+      if (target && typeof target.focus === 'function') {
+        target.focus({ preventScroll: true });
+      }
+    }
+
     /* ---------- HELPERY STACJI OSCE ---------- */
     function getOsceStations() {
       if (ctx.osce && typeof ctx.osce.getStations === 'function') {
@@ -175,6 +237,7 @@
     const PATIENT_CASES = [
       {
         id: 'pph-atonia',
+        mod: '1',
         shortTitle: 'Krwotok poporodowy (PPH)',
         title: 'Masywny krwotok poporodowy z powodu atonii macicy',
         category: 'Położnictwo · Stan nagły',
@@ -313,6 +376,7 @@
       },
       {
         id: 'eclampsia-hellp',
+        mod: '2',
         shortTitle: 'Ciężki PE / Zespół HELLP',
         title: 'Ciężki stan przedrzucawkowy zagrażający rzucawką i zespół HELLP',
         category: 'Położnictwo · Nadciśnienie',
@@ -444,6 +508,7 @@
       },
       {
         id: 'ectopic-ruptured',
+        mod: '3',
         shortTitle: 'Pęknięta ciąża ektopowa',
         title: 'Pęknięta ciąża jajowodowa ze wstrząsem hipowolemicznym',
         category: 'Ginekologia · Ostry brzuch',
@@ -575,6 +640,7 @@
       },
       {
         id: 'cord-prolapse',
+        mod: '5',
         shortTitle: 'Wypadnięcie pępowiny',
         title: 'Wypadnięcie pępowiny po odpłynięciu płynu owodniowego',
         category: 'Położnictwo · Sala Porodowa',
@@ -731,13 +797,13 @@
       const siVal = v.shockIndex != null ? Number(v.shockIndex).toFixed(2) : '–';
       const hasFhr = v.fhr !== null && v.fhr !== undefined;
       return `<div class="vitals-monitor" aria-label="Monitor parametrów życiowych">
-        <div class="vital-chip ${getVitalStatus('hr', v.hr)}"><span class="v-lab">❤️ HR matki</span><span class="v-val">${esc(v.hr)}</span><span class="v-unit">/min</span></div>
-        <div class="vital-chip ${bpStatus}"><span class="v-lab">🩸 RR</span><span class="v-val" style="font-size:1.05rem">${esc(v.bp)}</span><span class="v-unit">mmHg</span></div>
-        <div class="vital-chip ${getVitalStatus('shockIndex', v.shockIndex)}"><span class="v-lab">⚡ Wsk. wstrząsu</span><span class="v-val">${esc(siVal)}</span><span class="v-unit">SI (&lt;0,9)</span></div>
-        <div class="vital-chip ${getVitalStatus('spo2', v.spo2)}"><span class="v-lab">🫁 SpO₂</span><span class="v-val">${esc(v.spo2)}%</span><span class="v-unit">saturacja</span></div>
-        <div class="vital-chip ${getVitalStatus('rr', v.rr)}"><span class="v-lab">💨 Oddech</span><span class="v-val">${esc(v.rr)}</span><span class="v-unit">/min</span></div>
-        <div class="vital-chip ${getVitalStatus('temp', v.temp)}"><span class="v-lab">🌡️ Temp</span><span class="v-val">${esc(Number(v.temp || 36.6).toFixed(1))}</span><span class="v-unit">°C</span></div>
-        ${hasFhr ? `<div class="vital-chip ${getVitalStatus('fhr', v.fhr)}"><span class="v-lab">👶 FHR płodu</span><span class="v-val">${esc(v.fhr)}</span><span class="v-unit">ud./min</span></div>` : ''}
+        <div class="vital-chip ${getVitalStatus('hr', v.hr)}"><span class="v-lab">${ico('heart')} HR matki</span><span class="v-val">${esc(v.hr)}</span><span class="v-unit">/min</span></div>
+        <div class="vital-chip ${bpStatus}"><span class="v-lab">${ico('droplet')} RR</span><span class="v-val" style="font-size:1.05rem">${esc(v.bp)}</span><span class="v-unit">mmHg</span></div>
+        <div class="vital-chip ${getVitalStatus('shockIndex', v.shockIndex)}"><span class="v-lab">${ico('zap')} Wsk. wstrząsu</span><span class="v-val">${esc(siVal)}</span><span class="v-unit">SI (&lt;0,9)</span></div>
+        <div class="vital-chip ${getVitalStatus('spo2', v.spo2)}"><span class="v-lab">${ico('wind')} SpO₂</span><span class="v-val">${esc(v.spo2)}%</span><span class="v-unit">saturacja</span></div>
+        <div class="vital-chip ${getVitalStatus('rr', v.rr)}"><span class="v-lab">${ico('activity')} Oddech</span><span class="v-val">${esc(v.rr)}</span><span class="v-unit">/min</span></div>
+        <div class="vital-chip ${getVitalStatus('temp', v.temp)}"><span class="v-lab">${ico('thermometer')} Temp</span><span class="v-val">${esc(Number(v.temp || 36.6).toFixed(1))}</span><span class="v-unit">°C</span></div>
+        ${hasFhr ? `<div class="vital-chip ${getVitalStatus('fhr', v.fhr)}"><span class="v-lab">${ico('heart')} FHR płodu</span><span class="v-val">${esc(v.fhr)}</span><span class="v-unit">ud./min</span></div>` : ''}
       </div>`;
     }
 
@@ -748,13 +814,13 @@
       return `<div class="card emergency-doses-tray" style="margin:1rem 0;background:var(--surface);border:2px solid var(--red);box-shadow:var(--shadow-md)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem">
           <div style="display:flex;align-items:center;gap:.55rem">
-            <span style="font-size:1.3rem" aria-hidden="true">🚨</span>
+            <span style="display:inline-flex;color:var(--red)" aria-hidden="true">${ico('alert', 20)}</span>
             <div>
               <h3 style="margin:0;font-size:1.08rem;color:var(--red)">Szuflada Leków Ratunkowych OB/GYN</h3>
               <div style="font-size:.8rem;color:var(--ink-muted)">${esc(cardData.subtitle)}</div>
             </div>
           </div>
-          <button type="button" class="btn sec sm" id="btnCloseEmergencyTray">✕ Zamknij</button>
+          <button type="button" class="btn sec sm" id="btnCloseEmergencyTray">${ico('x')} Zamknij</button>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:.7rem;margin-bottom:.85rem">
@@ -781,7 +847,7 @@
         </div>
 
         <div style="background:var(--red-l);border:1px solid var(--red-b);padding:.75rem .95rem;border-radius:8px;font-size:.82rem;line-height:1.45;color:var(--ink)">
-          <b style="color:var(--red)">⚠️ CZERWONE FLAGI I PRZECIWWSKAZANIA:</b>
+          <b style="color:var(--red);display:inline-flex;align-items:center;gap:.35rem">${ico('alert')} CZERWONE FLAGI I PRZECIWWSKAZANIA:</b>
           <ul style="margin:.35rem 0 0 1.15rem;padding:0">
             ${cardData.redFlags.map(rf => `<li>${esc(rf)}</li>`).join('')}
           </ul>
@@ -791,21 +857,21 @@
 
     function renderRelatedBadge(caseId) {
       const map = {
-        'pph-atonia': { link: '#/kalkulator', text: '🧮 Sprawdź kalkulator PPH / SI w Kalkulatorach OB →', col: 'var(--red)', bg: 'var(--red-l)' },
-        'eclampsia-hellp': { link: '#/kalkulator', text: '🧮 Sprawdź schemat MgSO₄ w Kalkulatorach OB →', col: 'var(--amber-d)', bg: 'var(--amber-l)' },
-        'ectopic-ruptured': { link: '#/badania', text: '🔬 Przećwicz USG wczesnej ciąży w KTG & USG →', col: 'var(--teal-d)', bg: 'var(--teal-l)' },
-        'cord-prolapse': { link: '#/badania', text: '📈 Przećwicz bradykardię i KTG w Atlasie KTG →', col: 'var(--blue)', bg: 'var(--blue-l)' }
+        'pph-atonia': { link: '#/kalkulator', icon: 'calc', text: 'Sprawdź kalkulator PPH / SI w Kalkulatorach OB →', col: 'var(--red)', bg: 'var(--red-l)' },
+        'eclampsia-hellp': { link: '#/kalkulator', icon: 'calc', text: 'Sprawdź schemat MgSO₄ w Kalkulatorach OB →', col: 'var(--amber-d)', bg: 'var(--amber-l)' },
+        'ectopic-ruptured': { link: '#/badania', icon: 'scan', text: 'Przećwicz USG wczesnej ciąży w KTG & USG →', col: 'var(--teal-d)', bg: 'var(--teal-l)' },
+        'cord-prolapse': { link: '#/badania', icon: 'activity', text: 'Przećwicz bradykardię i KTG w Atlasie KTG →', col: 'var(--blue)', bg: 'var(--blue-l)' }
       };
       const item = map[caseId];
       if (!item) return '';
-      return `<div style="margin-top:.55rem"><a class="chip" href="${item.link}" style="background:${item.bg};color:${item.col};font-weight:700;text-decoration:none;border:0">${esc(item.text)}</a></div>`;
+      return `<div style="margin-top:.55rem"><a class="chip" href="${item.link}" style="background:${item.bg};color:${item.col};font-weight:700;text-decoration:none;border:0;min-height:44px;padding:.35rem .85rem">${ico(item.icon)} ${esc(item.text)}</a></div>`;
     }
 
     function getClinicalRank(completedCount) {
-      if (completedCount >= 7) return { title: 'Dyżurny Położnik-Ginekolog 🏆', color: 'var(--teal)' };
-      if (completedCount >= 4) return { title: 'Rezydent Położnictwa i Ginekologii 🌟', color: 'var(--green)' };
-      if (completedCount >= 2) return { title: 'Stażysta Izby Przyjęć 🏥', color: 'var(--amber)' };
-      return { title: 'Student V roku · Ostry Dyżur 🩺', color: 'var(--ink-muted)' };
+      if (completedCount >= 7) return { title: 'Dyżurny Położnik-Ginekolog', icon: 'award', color: 'var(--teal)' };
+      if (completedCount >= 4) return { title: 'Rezydent Położnictwa i Ginekologii', icon: 'star', color: 'var(--green)' };
+      if (completedCount >= 2) return { title: 'Stażysta Izby Przyjęć', icon: 'shield', color: 'var(--amber)' };
+      return { title: 'Student V roku · Ostry Dyżur', icon: 'activity', color: 'var(--ink-muted)' };
     }
 
     /* ---------- ROUTER WIDOKU #/pacjent ---------- */
@@ -876,6 +942,7 @@
 
     /* ---------- LISTA PRZYPADKÓW IZBY PRZYJĘĆ ---------- */
     function renderPatientCaseList() {
+      const prevFocus = captureFocusSelector();
       window.scrollTo(0, 0);
       const stations = getOsceStations();
       const savedCases = ctx.S.patientCases || {};
@@ -899,13 +966,13 @@
       main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:1040px">
         <div class="eyebrow">Symulator kliniczny · Ostry Dyżur Położniczo-Ginekologiczny</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.8rem;margin-bottom:.6rem">
-          <h2 style="margin:0">Izba Przyjęć &amp; Stacje OSCE</h2>
-          <span class="sim-rank-chip" style="color:${rank.color}">${esc(rank.title)}</span>
+          <h1 style="font-size:clamp(1.7rem,3.4vw,2.4rem);margin:0">Izba Przyjęć &amp; Stacje OSCE</h1>
+          <span class="sim-rank-chip" style="color:${rank.color}">${ico(rank.icon)} ${esc(rank.title)}</span>
         </div>
 
         <div class="conn-tabs" role="tablist" aria-label="Tryb symulatora klinicznego" style="margin-bottom:1.4rem">
-          <button type="button" class="conn-tab-btn active" data-ptab="sor" role="tab" aria-selected="true">🚨 Izba Przyjęć · Przypadki ostre (${PATIENT_CASES.length})</button>
-          <button type="button" class="conn-tab-btn" data-ptab="osce" role="tab" aria-selected="false">📋 Stacje OSCE (${stations.length})</button>
+          <button type="button" class="conn-tab-btn active" data-ptab="sor" role="tab" aria-selected="true">${ico('alert')} Izba Przyjęć · Przypadki ostre (${PATIENT_CASES.length})</button>
+          <button type="button" class="conn-tab-btn" data-ptab="osce" role="tab" aria-selected="false">${ico('clipboard')} Stacje OSCE (${stations.length})</button>
         </div>
 
         <p class="lead">Wieloetapowe scenariusze ostrych stanów w położnictwie i ginekologii wg wytycznych PTGiP / FIGO. Monitoruj parametry matki i płodu na żywo, korzystaj z szuflady leków ratunkowych i unikaj błędów krytycznych.</p>
@@ -958,7 +1025,7 @@
                 <div>
                   ${best !== null ? `
                     <span class="chip" style="background:${passed ? 'var(--green-l)' : 'var(--amber-l)'};color:${passed ? 'var(--green)' : 'var(--amber-d)'};font-weight:800;border:0">
-                      ${passed ? '✅ Najlepszy wynik' : '⚠ Do poprawy'}: ${best}%
+                      ${passed ? `${ico('check')} Najlepszy wynik` : `${ico('alert')} Do poprawy`}: ${best}%
                     </span>
                   ` : `<span class="chip" style="color:var(--ink-muted)">Nowy przypadek</span>`}
                 </div>
@@ -978,14 +1045,17 @@
           location.hash = b.dataset.ptab === 'osce' ? '#/pacjent/osce' : '#/pacjent';
         };
       });
+
+      restoreFocus(prevFocus);
     }
 
     /* ---------- AKTYWNA SYMULACJA PRZYPADKU ---------- */
-    function renderActivePatientSim(caseItem) {
+    function renderActivePatientSim(caseItem, focusFallbackSel) {
       if (SIM_ACTIVE.state === 'finished') {
         return renderPatientReport(caseItem);
       }
 
+      const prevFocus = captureFocusSelector();
       const s = caseItem.stages[SIM_ACTIVE.stageIdx];
       const isReviewed = SIM_ACTIVE.state === 'reviewed';
       const totalSteps = caseItem.stages.length + 1;
@@ -994,10 +1064,10 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
           <a class="btn sec sm" href="#/pacjent">← Wróć do Izby Przyjęć</a>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-            <button type="button" class="btn sec sm" id="btnToggleEmergencyTray" style="font-weight:700;color:var(--red);border-color:var(--red-b)">
-              🚨 Leki ratunkowe ${SIM_ACTIVE.showEmergencyTray ? '▲' : '▼'}
+            <button type="button" class="btn sec sm" id="btnToggleEmergencyTray" aria-expanded="${SIM_ACTIVE.showEmergencyTray ? 'true' : 'false'}" style="font-weight:700;color:var(--red);border-color:var(--red-b)">
+              ${ico('alert')} Leki ratunkowe ${ico(SIM_ACTIVE.showEmergencyTray ? 'chevUp' : 'chevDown')}
             </button>
-            <a class="btn sec sm" href="#/kalkulator" title="Kalkulatory położnicze">🧮 Kalkulatory OB</a>
+            <a class="btn sec sm" href="#/kalkulator" title="Kalkulatory położnicze">${ico('calc')} Kalkulatory OB</a>
           </div>
         </div>
 
@@ -1007,7 +1077,7 @@
             <span class="chip">${esc(caseItem.age)} · ${esc(caseItem.gravida)}</span>
             <span class="chip">${esc(caseItem.gestation)}</span>
           </div>
-          <h2 style="font-size:1.3rem;margin:.25rem 0">${esc(caseItem.title)}</h2>
+          <h1 style="font-size:1.3rem;margin:.25rem 0">${esc(caseItem.title)}</h1>
           <p class="srcline" style="margin-top:.35rem;font-size:.9rem;line-height:1.5">${esc(caseItem.intro)}</p>
           ${renderRelatedBadge(caseItem.id)}
         </div>
@@ -1040,7 +1110,7 @@
               ${s.options.map(opt => {
                 const isSel = SIM_ACTIVE.selectedOptionIds.has(opt.id);
                 return `<label class="sim-action-card ${isSel ? 'selected' : ''}" data-opt="${esc(opt.id)}">
-                  <input type="checkbox" ${isSel ? 'checked' : ''}>
+                  <input type="checkbox" name="simOpt" value="${esc(opt.id)}" ${isSel ? 'checked' : ''}>
                   <div style="flex:1">
                     <span style="font-weight:600;font-size:.95rem;line-height:1.42">${esc(opt.text)}</span>
                   </div>
@@ -1064,13 +1134,13 @@
                 if (opt.type === 'key') {
                   cls = 'rev-key';
                   badge = wasSelected
-                    ? `<span class="chip" style="background:var(--green-l);color:var(--green);font-weight:700;border:0">✓ Działanie kluczowe (+${opt.points} pkt)</span>`
-                    : `<span class="chip" style="background:var(--amber-l);color:var(--amber-d);font-weight:700;border:0">⚠ Przeoczone działanie kluczowe (0 pkt)</span>`;
+                    ? `<span class="chip" style="background:var(--green-l);color:var(--green);font-weight:700;border:0">${ico('check')} Działanie kluczowe (+${opt.points} pkt)</span>`
+                    : `<span class="chip" style="background:var(--amber-l);color:var(--amber-d);font-weight:700;border:0">${ico('alert')} Przeoczone działanie kluczowe (0 pkt)</span>`;
                 } else if (opt.type === 'harmful') {
                   cls = 'rev-harmful';
                   badge = wasSelected
-                    ? `<span class="chip" style="background:var(--red-l);color:var(--red);font-weight:700;border:0">✗ Błąd krytyczny (${opt.points} pkt)</span>`
-                    : `<span class="chip" style="background:var(--green-l);color:var(--green);font-weight:700;border:0">✓ Prawidłowo uniknięto błędu</span>`;
+                    ? `<span class="chip" style="background:var(--red-l);color:var(--red);font-weight:700;border:0">${ico('xcircle')} Błąd krytyczny (${opt.points} pkt)</span>`
+                    : `<span class="chip" style="background:var(--green-l);color:var(--green);font-weight:700;border:0">${ico('check')} Prawidłowo uniknięto błędu</span>`;
                 }
 
                 return `<div class="sim-action-card ${cls}" style="cursor:default">
@@ -1100,26 +1170,26 @@
       if (btnToggleEmerg) {
         btnToggleEmerg.onclick = () => {
           SIM_ACTIVE.showEmergencyTray = !SIM_ACTIVE.showEmergencyTray;
-          renderActivePatientSim(caseItem);
+          renderActivePatientSim(caseItem, '#btnToggleEmergencyTray');
         };
       }
       const btnCloseEmerg = $('#btnCloseEmergencyTray');
       if (btnCloseEmerg) {
         btnCloseEmerg.onclick = () => {
           SIM_ACTIVE.showEmergencyTray = false;
-          renderActivePatientSim(caseItem);
+          renderActivePatientSim(caseItem, '#btnToggleEmergencyTray');
         };
       }
 
       if (!isReviewed) {
         const grid = $('#actionGrid');
         if (grid) {
-          grid.addEventListener('click', e => {
-            const card = e.target.closest('[data-opt]');
+          grid.addEventListener('change', e => {
+            const cb = e.target;
+            if (!cb || cb.type !== 'checkbox') return;
+            const card = cb.closest('[data-opt]');
             if (!card) return;
             const optId = card.dataset.opt;
-            const cb = card.querySelector('input[type="checkbox"]');
-            if (e.target !== cb) cb.checked = !cb.checked;
             if (cb.checked) {
               SIM_ACTIVE.selectedOptionIds.add(optId);
               card.classList.add('selected');
@@ -1135,6 +1205,8 @@
         const nextBtn = $('#btnNextStage');
         if (nextBtn) nextBtn.onclick = () => nextPatientStage(caseItem);
       }
+
+      restoreFocus(prevFocus, focusFallbackSel);
     }
 
     function submitPatientStage(caseItem) {
@@ -1189,7 +1261,7 @@
       });
 
       SIM_ACTIVE.state = 'reviewed';
-      renderActivePatientSim(caseItem);
+      renderActivePatientSim(caseItem, '#btnNextStage');
       const target = document.querySelector('.vitals-monitor') || document.querySelector('.sim-steps');
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -1199,7 +1271,7 @@
         SIM_ACTIVE.stageIdx++;
         SIM_ACTIVE.state = 'deciding';
         SIM_ACTIVE.selectedOptionIds = new Set();
-        renderActivePatientSim(caseItem);
+        renderActivePatientSim(caseItem, '#actionGrid input[type="checkbox"]');
         const target = document.querySelector('.vitals-monitor') || document.querySelector('.sim-steps');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
@@ -1211,6 +1283,7 @@
 
     /* ---------- RAPORT KOŃCOWY I DEBRIEF ---------- */
     function renderPatientReport(caseItem) {
+      const prevFocus = captureFocusSelector();
       const max = Math.max(1, SIM_ACTIVE.maxScore);
       const score = Math.max(0, SIM_ACTIVE.score);
       const scorePct = typeof pct === 'function'
@@ -1219,20 +1292,20 @@
 
       let grade = 'Niezaliczone (błędy krytyczne)';
       let gradeColor = 'var(--red)';
-      let gradeIcon = '❌';
+      let gradeIcon = 'xcircle';
 
       if (scorePct >= 90) {
         grade = 'Celujący (Ekspert Izby Przyjęć OB/GYN)';
         gradeColor = 'var(--green)';
-        gradeIcon = '⭐';
+        gradeIcon = 'award';
       } else if (scorePct >= 75) {
         grade = 'Bardzo dobry (Skuteczna stabilizacja)';
         gradeColor = 'var(--green)';
-        gradeIcon = '🟢';
+        gradeIcon = 'check';
       } else if (scorePct >= 60) {
         grade = 'Zadowalający (Zaliczony z uwagami)';
         gradeColor = 'var(--amber)';
-        gradeIcon = '🟡';
+        gradeIcon = 'alert';
       }
 
       ctx.S.patientCases = ctx.S.patientCases || {};
@@ -1252,8 +1325,8 @@
         </div>
 
         <div class="card" style="text-align:center;padding:2rem 1.4rem;border-top:4px solid ${gradeColor}">
-          <div style="font-size:2.6rem;margin-bottom:.4rem" aria-hidden="true">${gradeIcon}</div>
-          <h2 style="font-size:1.75rem;margin-bottom:.35rem;font-family:var(--font-display)">Twój wynik: ${scorePct}% (${score}/${max} pkt)</h2>
+          <div style="display:inline-flex;align-items:center;justify-content:center;color:${gradeColor};margin-bottom:.45rem" aria-hidden="true">${ico(gradeIcon, 38)}</div>
+          <h1 style="font-size:1.75rem;margin:0 0 .35rem 0;font-family:var(--font-display)">Twój wynik: ${scorePct}% (${score}/${max} pkt)</h1>
           <b style="font-size:1.1rem;color:${gradeColor}">${esc(grade)}</b>
           <p class="srcline" style="max-width:600px;margin:.9rem auto 0 auto">
             ${scorePct >= 75
@@ -1262,9 +1335,9 @@
           </p>
 
           <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap">
-            <button type="button" class="btn pri" id="btnExportPatientNote">📋 Zapisz debrief do Notatnika</button>
-            <button type="button" class="btn sec" id="btnRestartPatient">🔄 Powtórz przypadek</button>
-            <a class="btn sec" href="#/pacjent">🩺 Inny przypadek</a>
+            <button type="button" class="btn pri" id="btnExportPatientNote">${ico('clipboard')} Zapisz debrief do Notatnika</button>
+            <button type="button" class="btn sec" id="btnRestartPatient">${ico('refresh')} Powtórz przypadek</button>
+            <a class="btn sec" href="#/pacjent">${ico('activity')} Inny przypadek</a>
           </div>
         </div>
 
@@ -1274,7 +1347,7 @@
           <p class="srcline" style="margin-bottom:1.1rem"><b>Patofizjologia / etiologia:</b> ${esc(caseItem.debrief.etiology)}</p>
 
           <div style="background:var(--bg);padding:1.05rem 1.25rem;border-radius:10px;margin-bottom:1.2rem;border:1px solid var(--line-2)">
-            <b style="font-size:1.02rem;color:var(--teal-d);display:block;margin-bottom:.55rem">💡 Złote zasady PTGiP / FIGO:</b>
+            <b style="font-size:1.02rem;color:var(--teal-d);display:flex;align-items:center;gap:.4rem;margin-bottom:.55rem">${ico('bulb')} Złote zasady PTGiP / FIGO:</b>
             <ul style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:.4rem">
               ${caseItem.debrief.keyRules.map(r => `<li style="font-size:.93rem;line-height:1.45">${esc(r)}</li>`).join('')}
             </ul>
@@ -1323,6 +1396,7 @@ ${caseItem.debrief.keyRules.map(r => `- ${r}`).join('\n')}
             title: `Izba Przyjęć: ${caseItem.shortTitle} (${scorePct}%)`,
             content: md,
             body: md,
+            mod: caseItem.mod || 'all',
             updatedAt: Date.now(),
             updated: Date.now()
           });
@@ -1335,6 +1409,8 @@ ${caseItem.debrief.keyRules.map(r => `- ${r}`).join('\n')}
           toast('Nie udało się zapisać notatki');
         }
       };
+
+      restoreFocus(prevFocus, '#btnExportPatientNote');
     }
 
     return { viewPatient, cases: PATIENT_CASES, getVitalStatus, renderPatientCaseList };

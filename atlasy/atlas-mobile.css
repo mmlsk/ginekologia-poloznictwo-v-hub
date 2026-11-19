@@ -49,27 +49,27 @@ html.hub-embedded .sticky-tools {
   top: 0;
 }
 /* Ciemny motyw: dopełnienie tła kontrolek z twardym #fff w bazowych arkuszach atlasów */
-[data-theme="dark"] .opt:not(.ok):not(.bad):not(.key),
-[data-theme="dark"] .opt:disabled:not(.ok):not(.bad):not(.key),
-[data-theme="dark"] .q .acts button,
-[data-theme="dark"] .q .reveal,
-[data-theme="dark"] .pas label,
-[data-theme="dark"] .chk li,
-[data-theme="dark"] .btn.ghost,
-[data-theme="dark"] button.btn:not([aria-pressed="true"]),
-[data-theme="dark"] .tgl,
-[data-theme="dark"] .src {
+[data-theme] .opt:not(.ok):not(.bad):not(.key),
+[data-theme] .opt:disabled:not(.ok):not(.bad):not(.key),
+[data-theme] .q .acts button,
+[data-theme] .q .reveal,
+[data-theme] .pas label,
+[data-theme] .chk li,
+[data-theme] .btn.ghost,
+[data-theme] button.btn:not([aria-pressed="true"]),
+[data-theme] .tgl,
+[data-theme] .src {
   background: var(--surface);
   color: var(--ink);
   border-color: var(--line);
 }
-[data-theme="dark"] .opt:disabled {
+[data-theme] .opt:disabled {
   color: var(--ink);
 }
-[data-theme="dark"] .q header {
+[data-theme] .q header {
   background: rgba(255, 255, 255, 0.04);
 }
-[data-theme="dark"] th {
+[data-theme] th {
   background: var(--surface);
   color: var(--ink);
 }
@@ -96,7 +96,7 @@ html.hub-embedded .sticky-tools {
     backdrop-filter: none;
     background: var(--surface, var(--paper));
   }
-  [data-theme="dark"] .nav {
+  [data-theme] .nav {
     background: var(--surface);
   }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
@@ -112,7 +112,9 @@ html.hub-embedded .sticky-tools {
   .q .reveal,
   .pas label,
   button.btn,
-  .tgl button {
+  .tgl button,
+  .leo-btns button,
+  .bishop-opts button {
     min-height: 44px;
     touch-action: manipulation;
   }
@@ -146,43 +148,43 @@ html.hub-embedded .sticky-tools {
 }
 
 /* Spójne poprawki ciemnego motywu dla wszystkich osadzonych atlasów */
-[data-theme="dark"] .mod,
-[data-theme="dark"] .score,
-[data-theme="dark"] .pill.n,
-[data-theme="dark"] .tgl button[aria-pressed="true"],
-[data-theme="dark"] button.btn:hover,
-[data-theme="dark"] button.btn[aria-pressed="true"] {
+[data-theme] .mod,
+[data-theme] .score,
+[data-theme] .pill.n,
+[data-theme] .tgl button[aria-pressed="true"],
+[data-theme] button.btn:hover,
+[data-theme] button.btn[aria-pressed="true"] {
   background: var(--ink);
   color: var(--bg);
 }
-[data-theme="dark"] .opt:not(.ok):not(.bad):not(.key),
-[data-theme="dark"] .q .acts button:not(.primary),
-[data-theme="dark"] .pas label:not(:has(input:checked)),
-[data-theme="dark"] .tgl,
-[data-theme="dark"] .tgl button:not([aria-pressed="true"]),
-[data-theme="dark"] .xc,
-[data-theme="dark"] .src,
-[data-theme="dark"] button.btn {
+[data-theme] .opt:not(.ok):not(.bad):not(.key),
+[data-theme] .q .acts button:not(.primary),
+[data-theme] .pas label:not(:has(input:checked)),
+[data-theme] .tgl,
+[data-theme] .tgl button:not([aria-pressed="true"]),
+[data-theme] .xc,
+[data-theme] .src,
+[data-theme] button.btn {
   background: var(--surface);
   color: var(--ink);
   border-color: var(--line);
 }
-[data-theme="dark"] .kb.unk,
-[data-theme="dark"] .kb.rec,
-[data-theme="dark"] .mk,
-[data-theme="dark"] .heat tr.grp td {
+[data-theme] .kb.unk,
+[data-theme] .kb.rec,
+[data-theme] .mk,
+[data-theme] .heat tr.grp td {
   background: var(--line-2);
   color: var(--ink-2);
 }
-[data-theme="dark"] .opt:disabled {
+[data-theme] .opt:disabled {
   color: var(--ink);
 }
-[data-theme="dark"] svg.dg .b:not(.navy),
-[data-theme="dark"] svg.dg .nd:not(.on) {
+[data-theme] svg.dg .b:not(.navy),
+[data-theme] svg.dg .nd:not(.on) {
   fill: var(--surface);
 }
-[data-theme="dark"] svg.dg .navy-t,
-[data-theme="dark"] svg.dg .t.tw {
+[data-theme] svg.dg .navy-t,
+[data-theme] svg.dg .t.tw {
   fill: var(--ink);
 }
 
@@ -288,7 +290,7 @@ button.btn:not(:disabled):active,
 .body-map svg .pt:focus-visible,
 .tri g.v:focus-visible,
 svg [role="button"]:focus-visible {
-  outline: 3px solid var(--teal-d, #075760);
+  outline: 3px solid var(--teal-d);
   outline-offset: 2px;
   stroke: var(--ink);
   stroke-width: 2.5px;

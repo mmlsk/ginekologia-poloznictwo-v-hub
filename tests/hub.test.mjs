@@ -5,7 +5,7 @@ import logic from '../js/logic.js';
 const {
   esc, norm, b64EncodeUtf8, b64DecodeUtf8,
   calcNaegele, calcBishop, calcApgar, calcOgttPregnancy, calcRmi,
-  parseQuestionsInput, diagnoseQuestionsInput, parseBackupCode, parseMarkdown, scoreExam
+  parseQuestionsInput, diagnoseQuestionsInput, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
 } = logic;
 
 test('UTF-8 base64 round-trip preserves Polish diacritics', () => {
@@ -162,4 +162,83 @@ test('parseBackupCode distinguishes empty, bad base64, bad JSON, wrong schema, a
   assert.deepEqual(res.state.visited, { 'nagle-ob': 1 });
   assert.equal(res.state.last, 'nagle-ob');
   assert.equal(res.state.examHistory.length, 1);
+  assert.equal(res.extras, null);
+});
+
+test('parseBackupCode supports v2 extended payload with safe extras and top-level _extras', () => {
+  const defaults = { visited: {}, last: null, done: {}, ans: {}, bm: {}, examHistory: [], patientCases: {}, osceCases: {} };
+  const extras = {
+    notes: [{ id: 'n1', title: 'KTG', body: 'Późne deceleracje' }],
+    scratch: 'Brudnopis dyżurowy',
+    customQ: [{ id: 'cq-1', stem: 'Pytanie', opts: ['A', 'B'], keys: [0] }],
+    calc: { lmp: '2026-01-01', cycle: 28 },
+    ctg: { solved: ['ctg1'] },
+    imaging: { solved: ['usg1'] }
+  };
+
+  const payload = buildBackupPayload({ visited: { 'nagle-ob': 1 }, done: { 'nagle-ob': 1 } }, extras);
+  const res = parseBackupCode(b64EncodeUtf8(JSON.stringify(payload)), defaults);
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.state.visited, { 'nagle-ob': 1 });
+  assert.deepEqual(res.state.done, { 'nagle-ob': 1 });
+  assert.deepEqual(res.extras, extras);
+
+  const v2Short = b64EncodeUtf8(JSON.stringify({
+    v: 2,
+    state: { bm: { gp0005: 1 } },
+    extras: {
+      notes: 'invalid-not-array',
+      scratch: 'ok',
+      customQ: { bad: true },
+      calc: ['not-obj'],
+      ctg: { score: 4 },
+      imaging: null,
+      injectedKey: 'drop-me'
+    }
+  }));
+  const resSanitized = parseBackupCode(v2Short, defaults);
+  assert.equal(resSanitized.ok, true);
+  assert.deepEqual(resSanitized.state.bm, { gp0005: 1 });
+  assert.deepEqual(resSanitized.extras, { scratch: 'ok', ctg: { score: 4 } });
+
+  const topLevelExtras = b64EncodeUtf8(JSON.stringify({
+    visited: { fizjologia: 1 },
+    _extras: { scratch: 'notatka', imaging: { seen: 2 }, unknown: 123 }
+  }));
+  const resTop = parseBackupCode(topLevelExtras, defaults);
+  assert.equal(resTop.ok, true);
+  assert.deepEqual(resTop.state.visited, { fizjologia: 1 });
+  assert.equal('_extras' in resTop.state, false);
+  assert.deepEqual(resTop.extras, { scratch: 'notatka', imaging: { seen: 2 } });
+
+  const badWrapped = b64EncodeUtf8(JSON.stringify({ version: 2, state: { foo: 1 } }));
+  assert.match(parseBackupCode(badWrapped, defaults).error, /GinPol Hub/i);
+});
+
+test('matchQuestionJump resolves exact IDs, leading #, pure numbers, suffixes, and substrings', () => {
+  const questions = [
+    { id: 'nagle-ob-q1', stem: 'Q1' },
+    { id: 'fizjo-q2', stem: 'Q2' },
+    { id: 'q0003', stem: 'Q3' },
+    { id: 'gp0005', stem: 'Q5' },
+    { id: 'patologia-q7', stem: 'Q7' }
+  ];
+
+  assert.equal(matchQuestionJump('gp0005', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('#gp0005', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('  GP0005 ', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('nagle-ob-q1', questions)?.id, 'nagle-ob-q1');
+  assert.equal(matchQuestionJump('5', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('#5', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('005', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('3', questions)?.id, 'q0003');
+  assert.equal(matchQuestionJump('7', questions)?.id, 'patologia-q7');
+  assert.equal(matchQuestionJump('4', questions)?.id, 'gp0005');
+  assert.equal(matchQuestionJump('fizjo', questions)?.id, 'fizjo-q2');
+
+  assert.equal(matchQuestionJump('nie-istnieje', questions), null);
+  assert.equal(matchQuestionJump('0', questions), null);
+  assert.equal(matchQuestionJump('999', questions), null);
+  assert.equal(matchQuestionJump('   ', questions), null);
+  assert.equal(matchQuestionJump('gp0005', []), null);
 });

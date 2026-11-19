@@ -2,24 +2,24 @@
 <html lang="pl">
 <head>
 <script>
-try{
-  if(window.self!==window.top)document.documentElement.classList.add('hub-embedded');
-  const t=localStorage.getItem('ginpol_hub_theme')||'auto';
-  if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
-}catch(e){}
-window.addEventListener('storage',e=>{
-  if(e.key==='ginpol_hub_theme'){
-    const t=e.newValue||'auto';
-    if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark';
+(function(){
+  var DARK={dark:1,navy:1,moss:1,espresso:1,ochre:1,purple:1,ocean:1};
+  function applyTheme(t){
+    var eff=DARK[t]?t:(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'');
+    if(eff)document.documentElement.dataset.theme=eff;
     else delete document.documentElement.dataset.theme;
   }
-});
-window.addEventListener('message',e=>{
-  if(e.data&&e.data.type==='SET_THEME'){
-    if(e.data.theme==='dark')document.documentElement.dataset.theme='dark';
-    else delete document.documentElement.dataset.theme;
-  }
-});
+  try{
+    if(window.self!==window.top)document.documentElement.classList.add('hub-embedded');
+    applyTheme(localStorage.getItem('ginpol_hub_theme')||'auto');
+  }catch(e){}
+  window.addEventListener('storage',function(e){
+    if(e.key==='ginpol_hub_theme')applyTheme(e.newValue||'auto');
+  });
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='SET_THEME')applyTheme(e.data.theme||'light');
+  });
+})();
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">

@@ -5,24 +5,32 @@ colors:
   burgundy-clinical: "#8A284C"
   burgundy-deep: "#641B36"
   burgundy-soft: "#F6E2EA"
+  burgundy-border: "#DDB5C5"
   burgundy-dark: "#A8345E"
   burgundy-glow-dark: "#E887AA"
   slate-indigo: "#245B7A"
   slate-indigo-soft: "#E1EFF5"
-  slate-indigo-dark: "#4FA3CC"
-  emergency-red: "#B93424"
+  slate-indigo-border: "#BFD8E4"
+  slate-indigo-dark: "#65B8E0"
+  emergency-red: "#A82D1E"
   emergency-red-soft: "#FBE6E2"
-  emergency-red-dark: "#E55B4B"
-  exam-amber: "#9A5F09"
+  emergency-red-border: "#F0C4BC"
+  emergency-red-dark: "#F07163"
+  exam-amber: "#8F5808"
   exam-amber-soft: "#FCEFD6"
-  exam-amber-dark: "#E59A24"
-  diagnostic-blue: "#2B63AE"
+  exam-amber-border: "#EED09D"
+  exam-amber-dark: "#F0A93B"
+  diagnostic-blue: "#24579E"
   diagnostic-blue-soft: "#E1ECF9"
-  diagnostic-blue-dark: "#4E8FE6"
-  verified-green: "#2F8450"
+  diagnostic-blue-border: "#BFD4EE"
+  diagnostic-blue-dark: "#68A4F2"
+  verified-green: "#216B3E"
   verified-green-soft: "#E1F3E7"
-  verified-green-dark: "#3BB36E"
+  verified-green-border: "#BFE2CB"
+  verified-green-dark: "#43C27A"
   search-hit: "#C84700"
+  search-hit-dark: "#C2410C"
+  ctg-paper-bg: "#FFFDF7"
   paper-bg: "#F5F6F2"
   surface-white: "#FFFFFF"
   surface-wash: "#EFF2F0"
@@ -134,12 +142,13 @@ Tryb jasny bazuje na ciepłym papierze o niskim olśnieniu (`#F5F6F2`), a tryb c
 - **Deep Plum-Wine / Rose Glow** (`--teal-d`: `#641B36`, ciemny: `#E887AA`): Teksty linków, stan `:hover` akcji głównych oraz wyróżnienia wartości liczbowych na ciemnych powierzchniach.
 - **Rose-Paper Wash** (`--teal-l`: `#F6E2EA`, ciemny: `rgba(196, 77, 120, 0.20)`): Subtelne podświetlenia aktywnych pozycji nawigacji atlasu, pól wyniku kalkulatorów (`.ob-calc-result`) oraz pierścieni fokusu.
 
-### Semantic Clinical Coding (4 obszary + Podwójna prawda)
-- **Emergency Red** (`--red`: `#B93424`, ciemny: `#E55B4B`): Wyłącznie stany zagrożenia życia matki i płodu (krwotok PPH, rzucawka, pęknięta ciąża ektopowa, wypadnięcie pępowiny), grupa A, błędy krytyczne OSCE oraz negatywna weryfikacja odpowiedzi.
-- **Exam Amber** (`--amber`: `#9A5F09`, ciemny: `#E59A24`): Obszar B (położnictwo), kolumna „Pod zaliczenie (klucz zakładu)” w boksach `.dual`, ostrzeżenia KTG „Podejrzany” oraz klucze wnioskowane.
-- **Diagnostic Blue** (`--blue`: `#2B63AE`, ciemny: `#4E8FE6`): Obszar C (ginekologia endokrynologiczna, rozród i zakażenia) oraz badania diagnostyczne.
-- **Slate Indigo** (`--violet`: `#245B7A`, ciemny: `#4FA3CC`): Obszar D (onkologia ginekologiczna i patologia szyjki) oraz zadania dydaktyczne.
-- **Verified Green** (`--green`: `#2F8450`, ciemny: `#3BB36E`): Poprawne odpowiedzi, kolumna „Aktualnie klinicznie (PTGiP / FIGO)” oraz zapisy KTG w normie.
+### Semantic Clinical Coding (4 obszary + Podwójna prawda, WCAG AA ≥ 4.5:1)
+- **Emergency Red** (`--red`: `#A82D1E`, ciemny: `#F07163`): Wyłącznie stany zagrożenia życia matki i płodu (krwotok PPH, rzucawka, pęknięta ciąża ektopowa, wypadnięcie pępowiny), grupa A, błędy krytyczne OSCE oraz negatywna weryfikacja odpowiedzi.
+- **Exam Amber** (`--amber`: `#8F5808`, ciemny: `#F0A93B`): Obszar B (położnictwo), kolumna „Pod zaliczenie (klucz zakładu)” w boksach `.dual`, ostrzeżenia KTG „Podejrzany” oraz klucze wnioskowane.
+- **Diagnostic Blue** (`--blue`: `#24579E`, ciemny: `#68A4F2`): Obszar C (ginekologia endokrynologiczna, rozród i zakażenia) oraz badania diagnostyczne.
+- **Slate Indigo** (`--violet`: `#245B7A`, ciemny: `#65B8E0`): Obszar D (onkologia ginekologiczna i patologia szyjki) oraz zadania dydaktyczne.
+- **Verified Green** (`--green`: `#216B3E`, ciemny: `#43C27A`): Poprawne odpowiedzi, kolumna „Aktualnie klinicznie (PTGiP / FIGO)” oraz zapisy KTG w normie.
+- **Search Hit** (`--hit`: `#C84700`, ciemny: `#C2410C`, tekst `#FFFFFF` ≥ 4.8:1 we wszystkich motywach): Wyróżnienie dopasowań wyszukiwania i przycisków akcji trafień (`.btn.hit`).
 
 ### Neutral Surfaces
 - **Warm Paper** (`--bg`: `#F5F6F2`, `--surface`: `#FFFFFF`, `--surface-2`: `#EFF2F0`, `--line`: `#DCE2E0`)

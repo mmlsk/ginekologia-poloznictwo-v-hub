@@ -30,7 +30,7 @@
   gap: .18rem;
   text-align: left;
   padding: .85rem 1rem;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1.5px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -83,7 +83,7 @@
 }
 .si-res {
   padding: .65rem .9rem;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface-2);
   border: 1px solid var(--line);
 }
@@ -107,7 +107,7 @@
   align-items: start;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: .65rem .85rem;
 }
 .steps .step::before {
@@ -122,10 +122,10 @@
   font-weight: 800;
   font-family: var(--font-display);
 }
-.steps .step.r::before { background: var(--red); }
-.steps .step.b::before { background: var(--blue); }
-.steps .step.g::before { background: var(--green); }
-.steps .step.a::before { background: var(--amber); }
+.steps .step.r::before { background: var(--red); color: var(--ink-inv); }
+.steps .step.b::before { background: var(--blue); color: var(--ink-inv); }
+.steps .step.g::before { background: var(--green); color: var(--ink-inv); }
+.steps .step.a::before { background: var(--amber); color: var(--ink-inv); }
 
 .vs th:first-child,
 .vs td:first-child { font-weight: 700; width: 22%; }

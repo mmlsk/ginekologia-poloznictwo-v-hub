@@ -96,6 +96,96 @@
       }
     }
 
+    const svgIcon = path => `<svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-hidden="true" style="flex-shrink:0">${path}</svg>`;
+    const ICON_CTG = svgIcon('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>');
+    const ICON_USG = svgIcon('<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/>');
+    const ICON_LAB = svgIcon('<path d="M10 2v7.53a2 2 0 0 1-.21.9L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.07-10.12a2 2 0 0 1-.21-.9V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>');
+    const ICON_CYTO = svgIcon('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/>');
+    const ICON_NOTE = svgIcon('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>');
+    const ICON_RESET = svgIcon('<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>');
+    const ICON_WARN = svgIcon('<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>');
+    const ICON_BOOK = svgIcon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>');
+    const ICON_HINT = svgIcon('<circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/>');
+    const ICON_NEXT = svgIcon('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>');
+
+    let armedResetTimer = null;
+    function clearArmedResetTimer() {
+      if (armedResetTimer) {
+        clearTimeout(armedResetTimer);
+        armedResetTimer = null;
+      }
+    }
+    function bindTwoStepReset(btn, onConfirm) {
+      if (!btn) return;
+      const origHtml = btn.innerHTML;
+      btn.onclick = () => {
+        if (btn.dataset.armed !== '1') {
+          clearArmedResetTimer();
+          btn.dataset.armed = '1';
+          btn.innerHTML = `${ICON_WARN} Potwierdź reset (kliknij ponownie)`;
+          btn.style.borderColor = 'var(--red)';
+          btn.style.color = 'var(--red)';
+          btn.style.background = 'var(--red-l)';
+          armedResetTimer = setTimeout(() => {
+            armedResetTimer = null;
+            if (btn.isConnected && btn.dataset.armed === '1') {
+              delete btn.dataset.armed;
+              btn.innerHTML = origHtml;
+              btn.style.borderColor = '';
+              btn.style.color = '';
+              btn.style.background = '';
+            }
+          }, 4000);
+          return;
+        }
+        clearArmedResetTimer();
+        delete btn.dataset.armed;
+        onConfirm();
+      };
+    }
+
+    function captureFocusState() {
+      const el = document.activeElement;
+      if (!el || !main || !main.contains(el)) return null;
+      const state = { id: el.id || '', selector: '', selStart: null, selEnd: null };
+      if (!state.id) {
+        const attrKeys = ['data-dtab', 'data-sub', 'data-mode', 'data-id', 'data-idx', 'data-val', 'data-opt', 'data-v', 'data-f'];
+        for (let i = 0; i < attrKeys.length; i++) {
+          const k = attrKeys[i];
+          const v = el.getAttribute(k);
+          if (v !== null) {
+            const cls = Array.from(el.classList).find(c => c.startsWith('js-') || c === 'calc-tab-btn');
+            const safeV = v.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            state.selector = (cls ? '.' + cls : el.tagName.toLowerCase()) + `[${k}="${safeV}"]`;
+            break;
+          }
+        }
+      }
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        try {
+          if (typeof el.selectionStart === 'number') {
+            state.selStart = el.selectionStart;
+            state.selEnd = el.selectionEnd;
+          }
+        } catch (e) { /* input type=number nie wspiera selectionStart */ }
+      }
+      return (state.id || state.selector) ? state : null;
+    }
+
+    function restoreFocusState(state) {
+      if (!state || !main) return;
+      const target = state.id ? document.getElementById(state.id) : (state.selector ? main.querySelector(state.selector) : null);
+      if (!target || target.disabled || typeof target.focus !== 'function') return;
+      try {
+        target.focus({ preventScroll: true });
+      } catch (e) {
+        target.focus();
+      }
+      if (state.selStart !== null && typeof target.setSelectionRange === 'function') {
+        try { target.setSelectionRange(state.selStart, state.selEnd); } catch (e) {}
+      }
+    }
+
     /* ---------- Domyślne bazy (fallback) ---------- */
 
     const DEFAULT_CTG_CASES = [
@@ -415,20 +505,26 @@
     function getUsgCases() {
       const meta = window.HUB_META;
       const raw = meta && Array.isArray(meta.USG_TRAINER_CASES) && meta.USG_TRAINER_CASES.length ? meta.USG_TRAINER_CASES : DEFAULT_USG_CASES;
-      return raw.map((c, idx) => ({
-        id: c.id || ('usg-' + idx),
-        title: c.title || c.name || ('Przypadek USG ' + (idx + 1)),
-        modality: c.modality || 'TVS',
-        subtitle: c.subtitle || c.sub || '',
-        vignette: c.vignette || c.desc || '',
-        scene: c.scene || (String(c.id).includes('loz') || String(c.id).includes('prev') ? 'previa' : (String(c.id).includes('iota') || String(c.id).includes('guz') ? 'iota' : (String(c.id).includes('pcos') ? 'pcos' : 'ectopic'))),
-        hotspot: c.hotspot || { x: 260, y: 165, r: 44, label: 'Kluczowa zmiana patologiczna' },
-        hint: c.hint || 'Wskaż centralną patologię w sektorze USG.',
-        mcqQuestion: c.mcqQuestion || c.question || 'Wybierz właściwe rozpoznanie / postępowanie:',
-        mcqOpts: Array.isArray(c.mcqOpts) ? c.mcqOpts : (Array.isArray(c.opts) ? c.opts : []),
-        mcqKey: typeof c.mcqKey === 'number' ? c.mcqKey : (typeof c.key === 'number' ? c.key : 0),
-        pearl: c.pearl || c.why || ''
-      }));
+      const sceneModMap = { ectopic: '3', previa: '1', iota: '12', pcos: '8' };
+      return raw.map((c, idx) => {
+        const scene = c.scene || (String(c.id).includes('loz') || String(c.id).includes('prev') ? 'previa' : (String(c.id).includes('iota') || String(c.id).includes('guz') ? 'iota' : (String(c.id).includes('pcos') ? 'pcos' : 'ectopic')));
+        const mod = (Array.isArray(c.mods) && c.mods[0]) ? String(c.mods[0]) : (c.mod ? String(c.mod) : (sceneModMap[scene] || '4'));
+        return {
+          id: c.id || ('usg-' + idx),
+          title: c.title || c.name || ('Przypadek USG ' + (idx + 1)),
+          modality: c.modality || 'TVS',
+          subtitle: c.subtitle || c.sub || '',
+          vignette: c.vignette || c.desc || '',
+          scene,
+          mod,
+          hotspot: c.hotspot || { x: 260, y: 165, r: 44, label: 'Kluczowa zmiana patologiczna' },
+          hint: c.hint || 'Wskaż centralną patologię w sektorze USG.',
+          mcqQuestion: c.mcqQuestion || c.question || 'Wybierz właściwe rozpoznanie / postępowanie:',
+          mcqOpts: Array.isArray(c.mcqOpts) ? c.mcqOpts : (Array.isArray(c.opts) ? c.opts : []),
+          mcqKey: typeof c.mcqKey === 'number' ? c.mcqKey : (typeof c.key === 'number' ? c.key : 0),
+          pearl: c.pearl || c.why || ''
+        };
+      });
     }
 
     function getBethesdaDb() {
@@ -567,50 +663,51 @@
       for (let halfMin = 0; halfMin <= 20; halfMin++) {
         const x = left + (halfMin / 20) * plotW;
         const major = halfMin % 2 === 0;
-        gridLines += `<line x1="${x.toFixed(1)}" y1="${fhrTop}" x2="${x.toFixed(1)}" y2="${fhrTop + fhrH}" stroke="${major ? '#DFABA0' : '#F2D7D0'}" stroke-width="${major ? 1.1 : 0.6}"/>`;
-        gridLines += `<line x1="${x.toFixed(1)}" y1="${tocoTop}" x2="${x.toFixed(1)}" y2="${tocoTop + tocoH}" stroke="${major ? '#DFABA0' : '#F2D7D0'}" stroke-width="${major ? 1.1 : 0.6}"/>`;
+        const strokeColor = major ? 'var(--ctg-grid-major, #DFABA0)' : 'var(--ctg-grid-minor, #F3DFD8)';
+        gridLines += `<line x1="${x.toFixed(1)}" y1="${fhrTop}" x2="${x.toFixed(1)}" y2="${fhrTop + fhrH}" stroke="${strokeColor}" stroke-width="${major ? 1.1 : 0.6}"/>`;
+        gridLines += `<line x1="${x.toFixed(1)}" y1="${tocoTop}" x2="${x.toFixed(1)}" y2="${tocoTop + tocoH}" stroke="${strokeColor}" stroke-width="${major ? 1.1 : 0.6}"/>`;
         if (major) {
-          gridLines += `<text x="${x.toFixed(1)}" y="${fhrTop + fhrH + 16}" text-anchor="middle" font-size="10" font-weight="700" fill="#7D5A52">${halfMin / 2} min</text>`;
+          gridLines += `<text x="${x.toFixed(1)}" y="${fhrTop + fhrH + 16}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ctg-muted, #596870)">${halfMin / 2} min</text>`;
         }
       }
       // Poziome FHR (co 10 bpm)
       for (let bpm = 50; bpm <= 210; bpm += 10) {
         const y = fhrY(bpm);
         const major = bpm % 20 === 0;
-        gridLines += `<line x1="${left}" y1="${y.toFixed(1)}" x2="${right}" y2="${y.toFixed(1)}" stroke="${major ? '#DFABA0' : '#F2D7D0'}" stroke-width="${major ? 1.0 : 0.55}"/>`;
+        gridLines += `<line x1="${left}" y1="${y.toFixed(1)}" x2="${right}" y2="${y.toFixed(1)}" stroke="${major ? 'var(--ctg-grid-major, #DFABA0)' : 'var(--ctg-grid-minor, #F3DFD8)'}" stroke-width="${major ? 1.0 : 0.55}"/>`;
         if (major && bpm >= 60 && bpm <= 200) {
-          gridLines += `<text x="${left - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="#5A423C">${bpm}</text>`;
+          gridLines += `<text x="${left - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="var(--ctg-muted, #596870)">${bpm}</text>`;
         }
       }
       // Poziome TOCO (co 25 mmHg)
       for (let mm = 0; mm <= 100; mm += 25) {
         const y = tocoY(mm);
-        gridLines += `<line x1="${left}" y1="${y.toFixed(1)}" x2="${right}" y2="${y.toFixed(1)}" stroke="#DFABA0" stroke-width="0.9"/>`;
-        gridLines += `<text x="${left - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="#5A423C">${mm}</text>`;
+        gridLines += `<line x1="${left}" y1="${y.toFixed(1)}" x2="${right}" y2="${y.toFixed(1)}" stroke="var(--ctg-grid-major, #DFABA0)" stroke-width="0.9"/>`;
+        gridLines += `<text x="${left - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="var(--ctg-muted, #596870)">${mm}</text>`;
       }
 
       const normBandY = fhrY(160);
       const normBandH = fhrY(110) - fhrY(160);
 
       return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Zapis kardiotokograficzny KTG: kanał FHR 50–210 bpm oraz kanał TOCO 0–100 mmHg">
-        <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="#FFFDF7"/>
-        <text x="${left}" y="14" font-size="11" font-weight="800" fill="#641B36">FHR (uderzenia/min) · Papier 1 cm/min · Pasmo normy 110–160 bpm</text>
-        <text x="${right}" y="14" text-anchor="end" font-size="10.5" font-weight="700" fill="#7D5A52">10 min</text>
+        <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="var(--ctg-bg, #FFFDF7)"/>
+        <text x="${left}" y="14" font-size="11" font-weight="800" fill="var(--ctg-ink, #13232C)">FHR (uderzenia/min) · Papier 1 cm/min · Pasmo normy 110–160 bpm</text>
+        <text x="${right}" y="14" text-anchor="end" font-size="10.5" font-weight="700" fill="var(--ctg-muted, #596870)">10 min</text>
 
         <!-- Strefa fizjologiczna 110-160 bpm -->
-        <rect x="${left}" y="${normBandY.toFixed(1)}" width="${plotW}" height="${normBandH.toFixed(1)}" fill="rgba(47, 132, 80, 0.13)"/>
+        <rect x="${left}" y="${normBandY.toFixed(1)}" width="${plotW}" height="${normBandH.toFixed(1)}" fill="var(--ctg-band, rgba(33,107,62,0.08))"/>
         ${gridLines}
-        <line x1="${left}" y1="${fhrY(160).toFixed(1)}" x2="${right}" y2="${fhrY(160).toFixed(1)}" stroke="#2F8450" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
-        <line x1="${left}" y1="${fhrY(110).toFixed(1)}" x2="${right}" y2="${fhrY(110).toFixed(1)}" stroke="#2F8450" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
-        <rect x="${left}" y="${fhrTop}" width="${plotW}" height="${fhrH}" fill="none" stroke="#B77B70" stroke-width="1.3"/>
+        <line x1="${left}" y1="${fhrY(160).toFixed(1)}" x2="${right}" y2="${fhrY(160).toFixed(1)}" stroke="var(--green, #216B3E)" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+        <line x1="${left}" y1="${fhrY(110).toFixed(1)}" x2="${right}" y2="${fhrY(110).toFixed(1)}" stroke="var(--green, #216B3E)" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+        <rect x="${left}" y="${fhrTop}" width="${plotW}" height="${fhrH}" fill="none" stroke="var(--ctg-grid-major, #DFABA0)" stroke-width="1.3"/>
 
         <!-- Krzywa FHR -->
-        <polyline points="${fhrPts.join(' ')}" fill="none" stroke="#13232C" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${fhrPts.join(' ')}" fill="none" stroke="var(--ctg-fhr, #13232C)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
 
         <!-- Kanał TOCO -->
-        <text x="${left}" y="${tocoTop - 7}" font-size="11" font-weight="800" fill="#245B7A">TOCO — czynność skurczowa macicy (jednostki względne / mmHg)</text>
-        <rect x="${left}" y="${tocoTop}" width="${plotW}" height="${tocoH}" fill="none" stroke="#B77B70" stroke-width="1.3"/>
-        <polyline points="${tocoPts.join(' ')}" fill="none" stroke="#8A284C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <text x="${left}" y="${tocoTop - 7}" font-size="11" font-weight="800" fill="var(--ctg-toco, #24579E)">TOCO — czynność skurczowa macicy (jednostki względne / mmHg)</text>
+        <rect x="${left}" y="${tocoTop}" width="${plotW}" height="${tocoH}" fill="none" stroke="var(--ctg-grid-major, #DFABA0)" stroke-width="1.3"/>
+        <polyline points="${tocoPts.join(' ')}" fill="none" stroke="var(--ctg-toco, #24579E)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>`;
     }
 
@@ -627,7 +724,7 @@
           <text x="195" y="255" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="monospace">MACICA (pusta jama)</text>
           <!-- Wolny płyn w zatoce Douglasa -->
           <path d="M235 230 Q290 258 345 232 Q315 276 255 268 Z" fill="#020617" stroke="#334155" stroke-width="1"/>
-          <text x="292" y="280" text-anchor="middle" font-size="10" fill="#64748b" font-family="monospace">płyn (Z. Douglasa)</text>
+          <text x="292" y="280" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="monospace">płyn (Z. Douglasa)</text>
           <!-- Jajnik prawy -->
           <ellipse cx="395" cy="215" rx="34" ry="22" fill="#334155" stroke="#64748b" stroke-width="1"/>
           <circle cx="386" cy="212" r="5" fill="#0f172a"/><circle cx="404" cy="218" r="6" fill="#0f172a"/>
@@ -640,7 +737,7 @@
         anatomy = `
           <!-- Pęcherz moczowy (bezechowy u góry z lewej) -->
           <path d="M125 98 Q185 82 225 112 Q185 138 130 124 Z" fill="#020617" stroke="#475569" stroke-width="1.2"/>
-          <text x="172" y="114" text-anchor="middle" font-size="10" fill="#64748b" font-family="monospace">PĘCHERZ</text>
+          <text x="172" y="114" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="monospace">PĘCHERZ</text>
           <!-- Szyjka macicy i kanał szyjki -->
           <rect x="215" y="195" width="95" height="68" rx="18" fill="#334155" stroke="#64748b" stroke-width="1.5"/>
           <line x1="262" y1="196" x2="262" y2="262" stroke="#e2e8f0" stroke-width="2.5" stroke-dasharray="4 2"/>
@@ -654,7 +751,7 @@
         anatomy = `
           <!-- Wolny płyn (ascites) wokół zmiany -->
           <path d="M120 225 Q260 288 405 225 Q375 292 260 296 Q150 290 120 225 Z" fill="#020617"/>
-          <text x="260" y="286" text-anchor="middle" font-size="10.5" fill="#64748b" font-family="monospace">WOLNY PŁYN (ASCITES)</text>
+          <text x="260" y="286" text-anchor="middle" font-size="10.5" fill="#94a3b8" font-family="monospace">WOLNY PŁYN (ASCITES)</text>
           <!-- Duża wielokomorowa torbiel lito-torbielowata -->
           <ellipse cx="260" cy="170" rx="112" ry="74" fill="#090d16" stroke="#94a3b8" stroke-width="2.5"/>
           <!-- Grube nieregularne przegrody -->
@@ -683,7 +780,7 @@
 
       const depthTicks = [2, 4, 6, 8, 10].map((cm, idx) => {
         const y = 60 + idx * 52;
-        return `<line x1="484" y1="${y}" x2="496" y2="${y}" stroke="#64748b" stroke-width="1.2"/><text x="502" y="${y + 4}" font-size="10" fill="#64748b" font-family="monospace">${cm}cm</text>`;
+        return `<line x1="484" y1="${y}" x2="496" y2="${y}" stroke="#94a3b8" stroke-width="1.2"/><text x="502" y="${y + 4}" font-size="10" fill="#94a3b8" font-family="monospace">${cm}cm</text>`;
       }).join('');
 
       return `<svg id="usgInteractiveSvg" class="imaging-canvas-svg" viewBox="0 0 530 315" role="group" aria-label="Obraz ultrasonograficzny: ${esc(c.title)}">
@@ -751,7 +848,7 @@
         lsil: `
           <polygon points="78,108 152,55 245,78 268,148 190,185 95,168" fill="#c4b5fd" fill-opacity="0.45" stroke="#641b36" stroke-width="2.5"/>
           <!-- Wyraźne przejaśnienie okołojądrowe (koilocyt) -->
-          <ellipse cx="172" cy="120" rx="52" ry="38" fill="#ffffff" fill-opacity="0.88" stroke="#9333ea" stroke-width="1.4" stroke-dasharray="4 3"/>
+          <ellipse cx="172" cy="120" rx="52" ry="38" fill="#f3eff8" fill-opacity="0.78" stroke="#9333ea" stroke-width="1.4" stroke-dasharray="4 3"/>
           <!-- Dwujądrzastość i atypia jądrowa -->
           <ellipse cx="158" cy="120" rx="16" ry="13" fill="#3b0764"/>
           <ellipse cx="188" cy="122" rx="15" ry="13" fill="#3b0764"/>
@@ -815,14 +912,14 @@
               Opanowane zapisy KTG: <strong style="color:var(--teal-d)">${solvedCount} / ${cases.length}</strong> (${solvedPct}%)
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button type="button" class="btn sec sm" id="btnToggleFigoRef">${CTG_STATE.showRef ? 'Ukryj tabelę FIGO 2015' : 'Ściąga FIGO 2015'}</button>
-              <button type="button" class="btn sec sm" id="btnResetCtg">Resetuj quiz KTG</button>
+              <button type="button" class="btn sec sm" id="btnToggleFigoRef">${ICON_BOOK} ${CTG_STATE.showRef ? 'Ukryj tabelę FIGO 2015' : 'Ściąga FIGO 2015'}</button>
+              <button type="button" class="btn sec sm" id="btnResetCtg" aria-live="polite">${ICON_RESET} Resetuj quiz KTG</button>
             </div>
           </div>
 
           ${CTG_STATE.showRef ? `
             <div class="card" style="padding:1rem;font-size:.86rem">
-              <h3 style="margin:0 0 .6rem">Kryteria klasyfikacji KTG wg FIGO 2015</h3>
+              <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0 0 .6rem">Kryteria klasyfikacji KTG wg FIGO 2015</h2>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">
                 <div style="padding:.7rem;border-radius:10px;background:var(--green-l);border:1px solid var(--green)">
                   <strong style="color:var(--green-d)">Prawidłowy (wszystkie 3):</strong>
@@ -860,9 +957,9 @@
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:.75rem">
               <div>
                 <div class="drug-formula">${esc(active.subtitle)}</div>
-                <h3 style="margin:.1rem 0 0">${esc(active.title)}</h3>
+                <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:.1rem 0 0">${esc(active.title)}</h2>
               </div>
-              <button type="button" class="btn sec sm" id="btnCopyCtg">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyCtg">${ICON_NOTE} Zapisz do notatek</button>
             </div>
             <p style="font-size:.92rem;color:var(--ink-2);margin-bottom:.85rem">${esc(active.vignette)}</p>
 
@@ -944,8 +1041,8 @@
               Rozwiązane przypadki USG: <strong style="color:var(--teal-d)">${solvedCount} / ${cases.length}</strong>
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button type="button" class="btn sec sm" id="btnUsgHint">${IMG_STATE.showHint ? 'Ukryj podpowiedź obszaru' : 'Podpowiedź obszaru'}</button>
-              <button type="button" class="btn sec sm" id="btnResetUsg">Resetuj USG</button>
+              <button type="button" class="btn sec sm" id="btnUsgHint">${ICON_HINT} ${IMG_STATE.showHint ? 'Ukryj podpowiedź obszaru' : 'Podpowiedź obszaru'}</button>
+              <button type="button" class="btn sec sm" id="btnResetUsg" aria-live="polite">${ICON_RESET} Resetuj USG</button>
             </div>
           </div>
 
@@ -979,9 +1076,9 @@
               <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
                 <div>
                   <div class="drug-formula">${esc(active.subtitle)}</div>
-                  <h3 style="margin:.1rem 0 0">${esc(active.title)}</h3>
+                  <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:.1rem 0 0">${esc(active.title)}</h2>
                 </div>
-                <button type="button" class="btn sec sm" id="btnCopyUsg">Zapisz do notatek</button>
+                <button type="button" class="btn sec sm" id="btnCopyUsg">${ICON_NOTE} Zapisz do notatek</button>
               </div>
               <p style="font-size:.92rem;color:var(--ink-2)">${esc(active.vignette)}</p>
 
@@ -1151,26 +1248,58 @@
       return { title, level, detail };
     }
 
-    function renderLabTab() {
-      const og = LAB_STATE.ogtt;
+    function renderOgttVerdictHtml(og) {
       const ogRes = evaluateOgtt(og);
       const ogColor = ogRes.level === 'ok' ? 'var(--green)' : (ogRes.level === 'warn' ? 'var(--amber)' : 'var(--red)');
       const ogBg = ogRes.level === 'ok' ? 'var(--green-l)' : (ogRes.level === 'warn' ? 'var(--amber-l)' : 'var(--red-l)');
+      return `<div class="lab-verdict-banner" style="background:${ogBg};border:1.5px solid ${ogColor}">
+        <div class="lab-verdict-title" style="color:${ogColor}">${esc(ogRes.diagnosis)}</div>
+        ${ogRes.flags.length ? `<ul style="margin:.2rem 0 0 1.1rem;font-size:.9rem;color:var(--ink)">${ogRes.flags.map(fl => `<li>${esc(fl)}</li>`).join('')}</ul>` : '<div style="font-size:.9rem;color:var(--ink)">Wszystkie 3 punkty pomiarowe mieszczą się w normie PTGiP.</div>'}
+        <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">Docelowe glikemie w samokontroli GDM (PTGiP): na czczo 70–90 mg/dl, 1 h po posiłku &lt;140 mg/dl.</div>
+      </div>`;
+    }
 
-      const h = LAB_STATE.hormones;
+    function renderHormonesVerdictHtml(h) {
       const hRes = interpretHormones(h);
       const hColor = hRes.level === 'ok' ? 'var(--green)' : (hRes.level === 'warn' ? 'var(--amber)' : 'var(--red)');
       const hBg = hRes.level === 'ok' ? 'var(--green-l)' : (hRes.level === 'warn' ? 'var(--amber-l)' : 'var(--red-l)');
+      return `<div class="lab-verdict-banner" style="background:${hBg};border:1.5px solid ${hColor}">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+          <div class="lab-verdict-title" style="color:${hColor}">${esc(hRes.headline)}</div>
+          <span class="badge" style="background:var(--surface);border:1px solid var(--line);color:var(--ink)">LH : FSH = ${esc(hRes.ratio)}</span>
+        </div>
+        <ul style="margin:.25rem 0 0 1.1rem;font-size:.9rem;color:var(--ink)">
+          ${hRes.notes.map(n => `<li>${esc(n)}</li>`).join('')}
+        </ul>
+      </div>`;
+    }
 
-      const hl = LAB_STATE.hellp;
+    function renderHellpVerdictHtml(hl) {
       const hlRes = interpretHellp(hl);
       const hlColor = hlRes.level === 'ok' ? 'var(--green)' : (hlRes.level === 'warn' ? 'var(--amber)' : 'var(--red)');
       const hlBg = hlRes.level === 'ok' ? 'var(--green-l)' : (hlRes.level === 'warn' ? 'var(--amber-l)' : 'var(--red-l)');
+      return `<div class="lab-verdict-banner" style="background:${hlBg};border:1.5px solid ${hlColor}">
+        <div class="lab-verdict-title" style="color:${hlColor}">${esc(hlRes.title)}</div>
+        <div style="font-size:.88rem;color:var(--ink)"><strong>${esc(hlRes.mississippi)}</strong> · Kryteria: Hemoliza (${hlRes.hem ? 'TAK' : 'NIE'}), Enzymy wątrobowe (${hlRes.el ? 'TAK' : 'NIE'}), Małopłytkowość &lt;100 (${hlRes.lp ? 'TAK' : 'NIE'}).</div>
+        <div style="font-size:.9rem;color:var(--ink)">${esc(hlRes.action)}</div>
+      </div>`;
+    }
 
-      const cg = LAB_STATE.cord;
+    function renderCordVerdictHtml(cg) {
       const cgRes = interpretCordGas(cg);
       const cgColor = cgRes.level === 'ok' ? 'var(--green)' : (cgRes.level === 'warn' ? 'var(--amber)' : 'var(--red)');
       const cgBg = cgRes.level === 'ok' ? 'var(--green-l)' : (cgRes.level === 'warn' ? 'var(--amber-l)' : 'var(--red-l)');
+      return `<div class="lab-verdict-banner" style="background:${cgBg};border:1.5px solid ${cgColor}">
+        <div class="lab-verdict-title" style="color:${cgColor}">${esc(cgRes.title)}</div>
+        <div style="font-size:.9rem;color:var(--ink)">${esc(cgRes.detail)}</div>
+      </div>`;
+    }
+
+    function renderLabTab() {
+      const og = LAB_STATE.ogtt;
+      const h = LAB_STATE.hormones;
+      const hl = LAB_STATE.hellp;
+      const cg = LAB_STATE.cord;
 
       return `
         <div class="imaging-filter-pills" style="margin-bottom:1.1rem" role="tablist" aria-label="Wybór kalkulatora laboratoryjnego">
@@ -1183,10 +1312,10 @@
           <div class="lab-calc-box">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
               <div>
-                <h3 style="margin:0">Test obciążenia glukozą OGTT 75g w ciąży (PTGiP / IADPSG)</h3>
+                <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0">Test obciążenia glukozą OGTT 75g w ciąży (PTGiP / IADPSG)</h2>
                 <p style="font-size:.86rem;color:var(--muted);margin-top:.2rem">Progi GDM: na czczo 92–125 · po 1h &gt;=180 · po 2h 153–199 mg/dl (wystarczy &gt;=1 nieprawidłowa wartość). Cukrzyca jawna: na czczo &gt;=126 lub po 2h &gt;=200 mg/dl.</p>
               </div>
-              <button type="button" class="btn sec sm" id="btnCopyOgtt">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyOgtt">${ICON_NOTE} Zapisz do notatek</button>
             </div>
 
             <div class="calc-quick-pills" style="margin-bottom:1rem">
@@ -1212,11 +1341,7 @@
               </div>
             </div>
 
-            <div class="lab-verdict-banner" style="background:${ogBg};border:1.5px solid ${ogColor}">
-              <div class="lab-verdict-title" style="color:${ogColor}">${esc(ogRes.diagnosis)}</div>
-              ${ogRes.flags.length ? `<ul style="margin:.2rem 0 0 1.1rem;font-size:.9rem;color:var(--ink)">${ogRes.flags.map(fl => `<li>${esc(fl)}</li>`).join('')}</ul>` : '<div style="font-size:.9rem;color:var(--ink)">Wszystkie 3 punkty pomiarowe mieszczą się w normie PTGiP.</div>'}
-              <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">Docelowe glikemie w samokontroli GDM (PTGiP): na czczo 70–90 mg/dl, 1 h po posiłku &lt;140 mg/dl.</div>
-            </div>
+            <div id="ogttVerdict" aria-live="polite">${renderOgttVerdictHtml(og)}</div>
           </div>
         ` : ''}
 
@@ -1224,10 +1349,10 @@
           <div class="lab-calc-box">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
               <div>
-                <h3 style="margin:0">Interpreter panelu hormonalnego (wczesna faza folikularna, 2.–5. dc)</h3>
+                <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0">Interpreter panelu hormonalnego (wczesna faza folikularna, 2.–5. dc)</h2>
                 <p style="font-size:.86rem;color:var(--muted);margin-top:.2rem">Ocena osi podwzgórze–przysadka–jajnik, stosunku LH:FSH, rezerwy jajnikowej AMH oraz progów PRL i TSH.</p>
               </div>
-              <button type="button" class="btn sec sm" id="btnCopyHormones">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyHormones">${ICON_NOTE} Zapisz do notatek</button>
             </div>
 
             <div class="calc-quick-pills" style="margin-bottom:1rem">
@@ -1248,15 +1373,7 @@
               <div class="lab-input-group"><label for="hAmh">AMH (ng/ml)</label><input id="hAmh" type="number" step="0.1" min="0" value="${esc(h.amh)}"></div>
             </div>
 
-            <div class="lab-verdict-banner" style="background:${hBg};border:1.5px solid ${hColor}">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-                <div class="lab-verdict-title" style="color:${hColor}">${esc(hRes.headline)}</div>
-                <span class="badge" style="background:var(--surface);border:1px solid var(--line);color:var(--ink)">LH : FSH = ${esc(hRes.ratio)}</span>
-              </div>
-              <ul style="margin:.25rem 0 0 1.1rem;font-size:.9rem;color:var(--ink)">
-                ${hRes.notes.map(n => `<li>${esc(n)}</li>`).join('')}
-              </ul>
-            </div>
+            <div id="hormonesVerdict" aria-live="polite">${renderHormonesVerdictHtml(h)}</div>
           </div>
         ` : ''}
 
@@ -1264,10 +1381,10 @@
           <div class="lab-calc-box">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
               <div>
-                <h3 style="margin:0">Zespół HELLP (kryteria Tennessee i klasyfikacja Mississippi)</h3>
+                <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0">Zespół HELLP (kryteria Tennessee i klasyfikacja Mississippi)</h2>
                 <p style="font-size:.86rem;color:var(--muted);margin-top:.2rem">Hemoliza (LDH &gt;=600 U/l lub schistocyty/spadek haptoglobiny) + AST/ALT &gt;=70 U/l + PLT &lt;100 G/l.</p>
               </div>
-              <button type="button" class="btn sec sm" id="btnCopyHellp">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyHellp">${ICON_NOTE} Zapisz do notatek</button>
             </div>
             <div class="calc-quick-pills" style="margin-bottom:1rem">
               <button type="button" class="calc-pill js-hellp-preset" data-v="195,24,22,240,0">Norma</button>
@@ -1281,24 +1398,20 @@
               <div class="lab-input-group"><label for="hlAlt">ALT (U/l)</label><input id="hlAlt" type="number" step="1" min="0" value="${esc(hl.alt)}"></div>
               <div class="lab-input-group"><label for="hlLdh">LDH (U/l)</label><input id="hlLdh" type="number" step="10" min="0" value="${esc(hl.ldh)}"></div>
             </div>
-            <label style="display:inline-flex;align-items:center;gap:.5rem;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:.4rem">
+            <label style="display:inline-flex;align-items:center;gap:.5rem;min-height:44px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:.4rem">
               <input id="hlHem" type="checkbox" ${hl.hemolysis ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--teal)">
               <span>Cechy hemolizy w rozmazie / niska haptoglobina / bilirubina &gt;=1,2 mg/dl</span>
             </label>
-            <div class="lab-verdict-banner" style="background:${hlBg};border:1.5px solid ${hlColor}">
-              <div class="lab-verdict-title" style="color:${hlColor}">${esc(hlRes.title)}</div>
-              <div style="font-size:.88rem;color:var(--ink)"><strong>${esc(hlRes.mississippi)}</strong> · Kryteria: Hemoliza (${hlRes.hem ? 'TAK' : 'NIE'}), Enzymy wątrobowe (${hlRes.el ? 'TAK' : 'NIE'}), Małopłytkowość &lt;100 (${hlRes.lp ? 'TAK' : 'NIE'}).</div>
-              <div style="font-size:.9rem;color:var(--ink)">${esc(hlRes.action)}</div>
-            </div>
+            <div id="hellpVerdict" aria-live="polite">${renderHellpVerdictHtml(hl)}</div>
           </div>
 
           <div class="lab-calc-box">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
               <div>
-                <h3 style="margin:0">Gazometria krwi pępowinowej (tętnica pępowinowa)</h3>
+                <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0">Gazometria krwi pępowinowej (tętnica pępowinowa)</h2>
                 <p style="font-size:.86rem;color:var(--muted);margin-top:.2rem">Obiektywna ocena równowagi kwasowo-zasadowej noworodka po porodzie (ACOG / FIGO: pH &lt;7,00 i BE &lt;=-12 mmol/l).</p>
               </div>
-              <button type="button" class="btn sec sm" id="btnCopyCord">Zapisz do notatek</button>
+              <button type="button" class="btn sec sm" id="btnCopyCord">${ICON_NOTE} Zapisz do notatek</button>
             </div>
             <div class="calc-quick-pills" style="margin-bottom:1rem">
               <button type="button" class="calc-pill js-cord-preset" data-v="7.28,-3.5,48,2.4">Norma</button>
@@ -1311,10 +1424,7 @@
               <div class="lab-input-group"><label for="cgPco2">pCO2 (mmHg)</label><input id="cgPco2" type="number" step="1" min="15" max="120" value="${esc(cg.pco2)}"></div>
               <div class="lab-input-group"><label for="cgLac">Mleczany (mmol/l)</label><input id="cgLac" type="number" step="0.1" min="0" max="25" value="${esc(cg.lactate)}"></div>
             </div>
-            <div class="lab-verdict-banner" style="background:${cgBg};border:1.5px solid ${cgColor}">
-              <div class="lab-verdict-title" style="color:${cgColor}">${esc(cgRes.title)}</div>
-              <div style="font-size:.9rem;color:var(--ink)">${esc(cgRes.detail)}</div>
-            </div>
+            <div id="cordVerdict" aria-live="polite">${renderCordVerdictHtml(cg)}</div>
           </div>
         ` : ''}
       `;
@@ -1369,8 +1479,8 @@
 
               <div class="rash-details-card">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
-                  <h3 style="margin:0">${esc(active.name)}</h3>
-                  <button type="button" class="btn sec sm" id="btnCopyBethesda">Do notatek</button>
+                  <h2 style="font-size:1.15rem;font-family:var(--font-body);font-weight:700;letter-spacing:0;margin:0">${esc(active.name)}</h2>
+                  <button type="button" class="btn sec sm" id="btnCopyBethesda">${ICON_NOTE} Do notatek</button>
                 </div>
                 <div class="rash-info-sections">
                   <div class="rash-info-row">
@@ -1397,7 +1507,7 @@
                   </button>
                 `).join('')}
               </div>
-              <button type="button" class="btn sec sm" id="btnResetBethesdaPuzzles">Resetuj zagadki</button>
+              <button type="button" class="btn sec sm" id="btnResetBethesdaPuzzles" aria-live="polite">${ICON_RESET} Resetuj zagadki</button>
             </div>
 
             <div class="rash-card-grid">
@@ -1445,7 +1555,7 @@
 
                 ${s2Done ? `
                   <div class="imaging-pearl-box"><strong>Podsumowanie:</strong> ${esc(puz.step2Why)}</div>
-                  ${pIdx < puzzles.length - 1 ? `<button type="button" class="btn pri sm" id="btnBpNext" style="align-self:flex-end">Następna zagadka</button>` : ''}
+                  ${pIdx < puzzles.length - 1 ? `<button type="button" class="btn pri sm" id="btnBpNext" style="align-self:flex-end">Następna zagadka ${ICON_NEXT}</button>` : ''}
                 ` : ''}
               </div>
             </div>
@@ -1476,6 +1586,9 @@
       }
 
       const render = () => {
+        const prevFocus = captureFocusState();
+        clearArmedResetTimer();
+
         let bodyHtml = '';
         if (DIAG_TAB === 'ktg') bodyHtml = renderKtgTab();
         else if (DIAG_TAB === 'usg') bodyHtml = renderUsgTab();
@@ -1484,20 +1597,21 @@
 
         main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:980px">
           <div class="eyebrow">Diagnostyka położnicza i ginekologiczna</div>
-          <h2>KTG (FIGO 2015), USG, Laboratorium OB/GYN i Cytologia</h2>
+          <h1 style="font-size:clamp(1.7rem,3.4vw,2.4rem);margin:0 0 .5rem">KTG (FIGO 2015), USG, Laboratorium OB/GYN i Cytologia</h1>
           <p class="lead">Interaktywny trenażer zapisów KTG na papierze milimetrowym, monitor USG z hotspotami patologii, kalkulatory OGTT / hormonów / HELLP / gazometrii pępowinowej oraz atlas cytologii Bethesda 2014.</p>
 
           <div class="calc-tab-nav" id="diagTabNav" role="tablist" aria-label="Zakładki diagnostyki OB/GYN">
-            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'ktg'}" class="calc-tab-btn ${DIAG_TAB === 'ktg' ? 'active' : ''}" data-dtab="ktg">Trenażer KTG (FIGO 2015)</button>
-            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'usg'}" class="calc-tab-btn ${DIAG_TAB === 'usg' ? 'active' : ''}" data-dtab="usg">Trenażer USG (Hotspots)</button>
-            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'lab'}" class="calc-tab-btn ${DIAG_TAB === 'lab' ? 'active' : ''}" data-dtab="lab">Kalkulatory Lab OB/GYN</button>
-            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'cytologia'}" class="calc-tab-btn ${DIAG_TAB === 'cytologia' ? 'active' : ''}" data-dtab="cytologia">Atlas Cytologii (Bethesda)</button>
+            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'ktg'}" class="calc-tab-btn ${DIAG_TAB === 'ktg' ? 'active' : ''}" data-dtab="ktg">${ICON_CTG} Trenażer KTG (FIGO 2015)</button>
+            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'usg'}" class="calc-tab-btn ${DIAG_TAB === 'usg' ? 'active' : ''}" data-dtab="usg">${ICON_USG} Trenażer USG (Hotspots)</button>
+            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'lab'}" class="calc-tab-btn ${DIAG_TAB === 'lab' ? 'active' : ''}" data-dtab="lab">${ICON_LAB} Kalkulatory Lab OB/GYN</button>
+            <button type="button" role="tab" aria-selected="${DIAG_TAB === 'cytologia'}" class="calc-tab-btn ${DIAG_TAB === 'cytologia' ? 'active' : ''}" data-dtab="cytologia">${ICON_CYTO} Atlas Cytologii (Bethesda)</button>
           </div>
 
           <div id="diagTabBody">${bodyHtml}</div>
         </div></section>`;
 
         bindEvents(render);
+        restoreFocusState(prevFocus);
       };
 
       render();
@@ -1521,16 +1635,13 @@
           render();
         };
       }
-      const resetCtgBtn = $('#btnResetCtg');
-      if (resetCtgBtn) {
-        resetCtgBtn.onclick = () => {
-          CTG_STATE.answers = {};
-          CTG_STATE.solved = [];
-          saveCtgState();
-          if (typeof toast === 'function') toast('Zresetowano postęp trenażera KTG.');
-          render();
-        };
-      }
+      bindTwoStepReset($('#btnResetCtg'), () => {
+        CTG_STATE.answers = {};
+        CTG_STATE.solved = [];
+        saveCtgState();
+        if (typeof toast === 'function') toast('Zresetowano postęp trenażera KTG.');
+        render();
+      });
       $$('.js-ctg-case').forEach(btn => {
         btn.onclick = () => {
           CTG_STATE.activeId = btn.dataset.id;
@@ -1562,7 +1673,7 @@
           if (!c) return;
           const figoNames = ['Prawidłowy', 'Podejrzany', 'Patologiczny'];
           const md = `# KTG (FIGO 2015): ${c.title}\n- **Klasyfikacja FIGO:** ${figoNames[c.figoKey]}\n- **Parametry:** linia bazowa ${c.metrics.baseline}, zmienność ${c.metrics.variability}, akceleracje ${c.metrics.accelerations}, deceleracje ${c.metrics.decelerations}\n- **Postępowanie:** ${c.actionOpts[c.actionKey]}\n- **Komentarz:** ${c.pearl}`;
-          saveNoteEntry(`KTG FIGO: ${c.title}`, md, '4');
+          saveNoteEntry(`KTG FIGO: ${c.title}`, md, '5');
         };
       }
 
@@ -1574,17 +1685,14 @@
           render();
         };
       }
-      const resetUsgBtn = $('#btnResetUsg');
-      if (resetUsgBtn) {
-        resetUsgBtn.onclick = () => {
-          IMG_STATE.usgProgress = {};
-          IMG_STATE.lastMiss = null;
-          IMG_STATE.showHint = false;
-          saveImgState();
-          if (typeof toast === 'function') toast('Zresetowano postęp trenażera USG.');
-          render();
-        };
-      }
+      bindTwoStepReset($('#btnResetUsg'), () => {
+        IMG_STATE.usgProgress = {};
+        IMG_STATE.lastMiss = null;
+        IMG_STATE.showHint = false;
+        saveImgState();
+        if (typeof toast === 'function') toast('Zresetowano postęp trenażera USG.');
+        render();
+      });
       $$('.js-usg-case').forEach(btn => {
         btn.onclick = () => {
           IMG_STATE.activeUsgId = btn.dataset.id;
@@ -1642,7 +1750,7 @@
           const c = getUsgCases().find(x => x.id === IMG_STATE.activeUsgId);
           if (!c) return;
           const md = `# USG (${c.modality}): ${c.title}\n- **Obraz:** ${c.hotspot.label}\n- **Opis:** ${c.vignette}\n- **Postępowanie:** ${c.mcqOpts[c.mcqKey]}\n- **Perła:** ${c.pearl}`;
-          saveNoteEntry(`USG: ${c.title}`, md, '2');
+          saveNoteEntry(`USG: ${c.title}`, md, c.mod || '4');
         };
       }
 
@@ -1653,19 +1761,27 @@
           render();
         };
       });
-      // OGTT
-      const bindNum = (sel, obj, key) => {
+      // OGTT (aktualizacja werdyktu w miejscu bez utraty fokusu)
+      const bindNum = (sel, obj, key, updateVerdict) => {
         const el = $(sel);
-        if (el) {
-          el.onchange = () => {
-            obj[key] = Number(el.value);
-            render();
-          };
-        }
+        if (!el) return;
+        const onVal = () => {
+          if (el.value === '' || el.value === '-') return;
+          const num = Number(el.value);
+          if (Number.isNaN(num)) return;
+          obj[key] = num;
+          if (typeof updateVerdict === 'function') updateVerdict();
+        };
+        el.oninput = onVal;
+        el.onchange = onVal;
       };
-      bindNum('#ogttF', LAB_STATE.ogtt, 'fasting');
-      bindNum('#ogttH1', LAB_STATE.ogtt, 'h1');
-      bindNum('#ogttH2', LAB_STATE.ogtt, 'h2');
+      const updateOgttVerdict = () => {
+        const box = $('#ogttVerdict');
+        if (box) box.innerHTML = renderOgttVerdictHtml(LAB_STATE.ogtt);
+      };
+      bindNum('#ogttF', LAB_STATE.ogtt, 'fasting', updateOgttVerdict);
+      bindNum('#ogttH1', LAB_STATE.ogtt, 'h1', updateOgttVerdict);
+      bindNum('#ogttH2', LAB_STATE.ogtt, 'h2', updateOgttVerdict);
       $$('.js-ogtt-preset').forEach(btn => {
         btn.onclick = () => {
           LAB_STATE.ogtt = { fasting: Number(btn.dataset.f), h1: Number(btn.dataset.h1), h2: Number(btn.dataset.h2) };
@@ -1677,16 +1793,20 @@
         copyOgttBtn.onclick = () => {
           const r = evaluateOgtt(LAB_STATE.ogtt);
           const md = `# OGTT 75g w ciąży\n- Wyniki: na czczo ${LAB_STATE.ogtt.fasting} · 1h ${LAB_STATE.ogtt.h1} · 2h ${LAB_STATE.ogtt.h2} mg/dl\n- **Rozpoznanie:** ${r.diagnosis}\n${r.flags.map(f => `- ${f}`).join('\n')}`;
-          saveNoteEntry(`OGTT 75g: ${r.diagnosis}`, md, '3');
+          saveNoteEntry(`OGTT 75g: ${r.diagnosis}`, md, '6');
         };
       }
       // Hormony
-      bindNum('#hFsh', LAB_STATE.hormones, 'fsh');
-      bindNum('#hLh', LAB_STATE.hormones, 'lh');
-      bindNum('#hE2', LAB_STATE.hormones, 'e2');
-      bindNum('#hPrl', LAB_STATE.hormones, 'prl');
-      bindNum('#hTsh', LAB_STATE.hormones, 'tsh');
-      bindNum('#hAmh', LAB_STATE.hormones, 'amh');
+      const updateHormonesVerdict = () => {
+        const box = $('#hormonesVerdict');
+        if (box) box.innerHTML = renderHormonesVerdictHtml(LAB_STATE.hormones);
+      };
+      bindNum('#hFsh', LAB_STATE.hormones, 'fsh', updateHormonesVerdict);
+      bindNum('#hLh', LAB_STATE.hormones, 'lh', updateHormonesVerdict);
+      bindNum('#hE2', LAB_STATE.hormones, 'e2', updateHormonesVerdict);
+      bindNum('#hPrl', LAB_STATE.hormones, 'prl', updateHormonesVerdict);
+      bindNum('#hTsh', LAB_STATE.hormones, 'tsh', updateHormonesVerdict);
+      bindNum('#hAmh', LAB_STATE.hormones, 'amh', updateHormonesVerdict);
       $$('.js-horm-preset').forEach(btn => {
         btn.onclick = () => {
           const [fsh, lh, e2, prl, tsh, amh] = btn.dataset.v.split(',').map(Number);
@@ -1700,19 +1820,23 @@
           const r = interpretHormones(LAB_STATE.hormones);
           const h = LAB_STATE.hormones;
           const md = `# Panel hormonalny GYN\n- FSH ${h.fsh} · LH ${h.lh} (LH:FSH ${r.ratio}) · E2 ${h.e2} · PRL ${h.prl} · TSH ${h.tsh} · AMH ${h.amh}\n- **Wniosek:** ${r.headline}\n${r.notes.map(n => `- ${n}`).join('\n')}`;
-          saveNoteEntry(`Panel hormonalny: ${r.headline}`, md, '7');
+          saveNoteEntry(`Panel hormonalny: ${r.headline}`, md, '8');
         };
       }
       // HELLP & Cord Gas
-      bindNum('#hlPlt', LAB_STATE.hellp, 'plt');
-      bindNum('#hlAst', LAB_STATE.hellp, 'ast');
-      bindNum('#hlAlt', LAB_STATE.hellp, 'alt');
-      bindNum('#hlLdh', LAB_STATE.hellp, 'ldh');
+      const updateHellpVerdict = () => {
+        const box = $('#hellpVerdict');
+        if (box) box.innerHTML = renderHellpVerdictHtml(LAB_STATE.hellp);
+      };
+      bindNum('#hlPlt', LAB_STATE.hellp, 'plt', updateHellpVerdict);
+      bindNum('#hlAst', LAB_STATE.hellp, 'ast', updateHellpVerdict);
+      bindNum('#hlAlt', LAB_STATE.hellp, 'alt', updateHellpVerdict);
+      bindNum('#hlLdh', LAB_STATE.hellp, 'ldh', updateHellpVerdict);
       const hlHem = $('#hlHem');
       if (hlHem) {
         hlHem.onchange = () => {
           LAB_STATE.hellp.hemolysis = !!hlHem.checked;
-          render();
+          updateHellpVerdict();
         };
       }
       $$('.js-hellp-preset').forEach(btn => {
@@ -1728,13 +1852,17 @@
           const r = interpretHellp(LAB_STATE.hellp);
           const h = LAB_STATE.hellp;
           const md = `# Zespół HELLP\n- PLT ${h.plt} G/l · AST ${h.ast} U/l · ALT ${h.alt} U/l · LDH ${h.ldh} U/l\n- **Ocena:** ${r.title} (${r.mississippi})\n- **Postępowanie:** ${r.action}`;
-          saveNoteEntry(`HELLP: ${r.title}`, md, '3');
+          saveNoteEntry(`HELLP: ${r.title}`, md, '2');
         };
       }
-      bindNum('#cgPh', LAB_STATE.cord, 'ph');
-      bindNum('#cgBe', LAB_STATE.cord, 'be');
-      bindNum('#cgPco2', LAB_STATE.cord, 'pco2');
-      bindNum('#cgLac', LAB_STATE.cord, 'lactate');
+      const updateCordVerdict = () => {
+        const box = $('#cordVerdict');
+        if (box) box.innerHTML = renderCordVerdictHtml(LAB_STATE.cord);
+      };
+      bindNum('#cgPh', LAB_STATE.cord, 'ph', updateCordVerdict);
+      bindNum('#cgBe', LAB_STATE.cord, 'be', updateCordVerdict);
+      bindNum('#cgPco2', LAB_STATE.cord, 'pco2', updateCordVerdict);
+      bindNum('#cgLac', LAB_STATE.cord, 'lactate', updateCordVerdict);
       $$('.js-cord-preset').forEach(btn => {
         btn.onclick = () => {
           const [ph, be, pco2, lactate] = btn.dataset.v.split(',').map(Number);
@@ -1748,7 +1876,7 @@
           const r = interpretCordGas(LAB_STATE.cord);
           const g = LAB_STATE.cord;
           const md = `# Gazometria tętnicy pępowinowej\n- pH ${g.ph} · BE ${g.be} mmol/l · pCO2 ${g.pco2} mmHg · mleczany ${g.lactate} mmol/l\n- **Wniosek:** ${r.title}\n- ${r.detail}`;
-          saveNoteEntry(`Gazometria pępowinowa: pH ${g.ph}`, md, '4');
+          saveNoteEntry(`Gazometria pępowinowa: pH ${g.ph}`, md, '5');
         };
       }
 
@@ -1773,7 +1901,7 @@
           const b = getBethesdaDb().find(x => x.id === IMG_STATE.bethesdaId);
           if (!b) return;
           const md = `# Cytologia Bethesda 2014: ${b.name}\n- **Ryzyko:** ${b.risk}\n- **Morfologia:** ${b.morphology}\n- **Postępowanie PTGiP:** ${b.management}\n- **Pułapka:** ${b.pearl}`;
-          saveNoteEntry(`Bethesda: ${b.code}`, md, '9');
+          saveNoteEntry(`Bethesda: ${b.code}`, md, '11');
         };
       }
       $$('.js-bp-idx').forEach(btn => {
@@ -1808,17 +1936,14 @@
           render();
         };
       }
-      const resetBpBtn = $('#btnResetBethesdaPuzzles');
-      if (resetBpBtn) {
-        resetBpBtn.onclick = () => {
-          IMG_STATE.puzzleAnswers = {};
-          IMG_STATE.puzzlesDone = [];
-          IMG_STATE.puzzleIdx = 0;
-          saveImgState();
-          if (typeof toast === 'function') toast('Zresetowano zagadki Bethesda.');
-          render();
-        };
-      }
+      bindTwoStepReset($('#btnResetBethesdaPuzzles'), () => {
+        IMG_STATE.puzzleAnswers = {};
+        IMG_STATE.puzzlesDone = [];
+        IMG_STATE.puzzleIdx = 0;
+        saveImgState();
+        if (typeof toast === 'function') toast('Zresetowano zagadki Bethesda.');
+        render();
+      });
     }
 
     return { viewDiagnostics };

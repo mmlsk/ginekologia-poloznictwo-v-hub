@@ -383,6 +383,27 @@
     return 'Znaleziono warianty odpowiedzi (A./B.), ale brakuje treści pytania przed pierwszym wariantem (np. "1. Treść pytania...").';
   }
 
+  const isPlainObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+
+  function sanitizeBackupExtras(raw) {
+    if (!isPlainObj(raw)) return null;
+    const out = {};
+    if (Array.isArray(raw.notes)) out.notes = raw.notes;
+    if (typeof raw.scratch === 'string') out.scratch = raw.scratch;
+    if (Array.isArray(raw.customQ)) out.customQ = raw.customQ;
+    if (isPlainObj(raw.calc)) out.calc = raw.calc;
+    if (isPlainObj(raw.ctg)) out.ctg = raw.ctg;
+    if (isPlainObj(raw.imaging)) out.imaging = raw.imaging;
+    return out;
+  }
+
+  function buildBackupPayload(state, extras) {
+    const payload = { version: 2, state: isPlainObj(state) ? state : {} };
+    const safeExtras = sanitizeBackupExtras(extras);
+    if (safeExtras && Object.keys(safeExtras).length) payload.extras = safeExtras;
+    return payload;
+  }
+
   function parseBackupCode(raw, baseDefaults = {}) {
     const cleaned = String(raw || '').replace(/\s+/g, '');
     if (!cleaned) return { ok: false, error: 'Wklej kod kopii zapasowej w polu powyżej przed wczytaniem.' };
@@ -398,20 +419,54 @@
     } catch (e) {
       return { ok: false, error: 'Kod Base64 nie zawiera prawidłowych danych JSON kopii zapasowej.' };
     }
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    if (!isPlainObj(data)) {
       return { ok: false, error: 'Kopia zapasowa musi zawierać obiekt JSON ze stanem postępu.' };
     }
+    const isWrapped = (data.version === 2 || data.v === 2 || Object.prototype.hasOwnProperty.call(data, 'state')) && isPlainObj(data.state);
+    const stateSrc = isWrapped ? data.state : data;
     const objKeys = ['visited', 'done', 'ans', 'bm', 'patientCases', 'osceCases'];
     const allKnown = [...objKeys, 'last', 'examHistory'];
-    if (!allKnown.some(k => Object.prototype.hasOwnProperty.call(data, k))) {
+    if (!allKnown.some(k => Object.prototype.hasOwnProperty.call(stateSrc, k))) {
       return { ok: false, error: 'Zdekodowany JSON nie pochodzi z GinPol Hub (brak rozpoznanych pól postępu).' };
     }
-    const safeObj = (val, fallback) => (val && typeof val === 'object' && !Array.isArray(val)) ? val : (fallback || {});
-    const state = Object.assign({}, baseDefaults, data);
-    objKeys.forEach(k => { state[k] = safeObj(data[k], baseDefaults[k]); });
-    state.examHistory = Array.isArray(data.examHistory) ? data.examHistory : [];
-    state.last = typeof data.last === 'string' || (data.last && typeof data.last === 'object') ? data.last : null;
-    return { ok: true, state };
+    const safeObj = (val, fallback) => isPlainObj(val) ? val : (fallback || {});
+    const state = Object.assign({}, baseDefaults, stateSrc);
+    if (!isWrapped) delete state._extras;
+    objKeys.forEach(k => { state[k] = safeObj(stateSrc[k], baseDefaults[k]); });
+    state.examHistory = Array.isArray(stateSrc.examHistory) ? stateSrc.examHistory : [];
+    state.last = typeof stateSrc.last === 'string' || isPlainObj(stateSrc.last) ? stateSrc.last : null;
+    const rawExtras = isWrapped ? (data.extras !== undefined ? data.extras : data._extras) : data._extras;
+    const extras = sanitizeBackupExtras(rawExtras);
+    return { ok: true, state, extras };
+  }
+
+  function matchQuestionJump(query, questions) {
+    if (!Array.isArray(questions) || !questions.length) return null;
+    const raw = String(query == null ? '' : query).trim().replace(/^#+/, '').trim();
+    if (!raw) return null;
+    const qLower = raw.toLowerCase();
+    const list = questions.filter(q => q && typeof q.id === 'string');
+    if (!list.length) return null;
+
+    const exact = list.find(q => q.id.toLowerCase() === qLower);
+    if (exact) return exact;
+
+    if (/^\d+$/.test(qLower)) {
+      const num = parseInt(qLower, 10);
+      if (!num) return null;
+      const pad4 = String(num).padStart(4, '0');
+      return (
+        list.find(q => q.id.toLowerCase() === 'gp' + pad4) ||
+        list.find(q => q.id.toLowerCase() === 'q' + pad4) ||
+        list.find(q => {
+          const id = q.id.toLowerCase();
+          return id.endsWith('-q' + num) || (id.endsWith(pad4) && !/\d/.test(id.charAt(id.length - pad4.length - 1)));
+        }) ||
+        (num <= list.length ? list[num - 1] : null)
+      );
+    }
+
+    return list.find(q => q.id.toLowerCase().includes(qLower)) || null;
   }
 
   function parseMarkdown(src) {
@@ -503,7 +558,7 @@
   const api = {
     esc, escB, norm, pct, b64EncodeUtf8, b64DecodeUtf8,
     calcNaegele, calcBishop, calcApgar, calcOgttPregnancy, calcRmi,
-    parseQuestionsInput, diagnoseQuestionsInput, parseBackupCode, parseMarkdown, scoreExam
+    parseQuestionsInput, diagnoseQuestionsInput, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

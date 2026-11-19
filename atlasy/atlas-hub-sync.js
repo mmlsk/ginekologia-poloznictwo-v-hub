@@ -1,5 +1,20 @@
 /* Wspólna synchronizacja odpowiedzi z sekcji #zadania atlasów z globalnym stanem Hubu (ginpol_hub_state_v1) */
 (function () {
+  var DARK_THEMES = { dark: 1, navy: 1, moss: 1, espresso: 1, ochre: 1, purple: 1, ocean: 1 };
+  function applyAtlasTheme(theme) {
+    var t = theme || 'light';
+    var eff = DARK_THEMES[t]
+      ? t
+      : (t === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : '');
+    if (eff) document.documentElement.dataset.theme = eff;
+    else delete document.documentElement.dataset.theme;
+  }
+  window.addEventListener('message', function (ev) {
+    if (ev.data && ev.data.type === 'SET_THEME') {
+      applyAtlasTheme(ev.data.theme);
+    }
+  });
+
   var STORAGE_KEY = 'ginpol_hub_state_v1';
   var PREFIX_BY_DIR = {
     'modul-1-stany-nagle-poloznicze': 'nagle-ob-q',

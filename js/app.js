@@ -20,9 +20,157 @@ const main = $('#view');
 const {
   esc, escB, norm, pct, b64EncodeUtf8, b64DecodeUtf8,
   calcNaegele, calcBishop, calcApgar, calcOgttPregnancy, calcRmi,
-  parseQuestionsInput: _parseQ, diagnoseQuestionsInput, parseBackupCode, parseMarkdown, scoreExam
+  parseQuestionsInput: _parseQ, diagnoseQuestionsInput, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
 } = window.HUB_LOGIC;
 const parseQuestionsInput = (input, defaultBank = 'zaklad', defaultMod = '1') => _parseQ(input, defaultBank, defaultMod, { modById, banks: BANKS });
+
+const UI_ICONS = {
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  flame: '<path d="M12 2c.5 3.5-2.5 5-2.5 8a4.5 4.5 0 0 0 9 0c0-3-2-5.5-3.5-7 0 2-1.5 3-3 3 0-2 0-4 0-4z"/><path d="M8.5 14.5A3.5 3.5 0 0 0 12 18a3.5 3.5 0 0 0 3.5-3.5"/>',
+  warn: '<path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+  book: '<path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8z"/>',
+  books: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  map: '<polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>',
+  graph: '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.7 7.2 6.3 15.8M13.3 7.2l4.4 8.6M7.5 18h9"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+  cards: '<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 2h8a2 2 0 0 1 2 2v12"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  refresh: '<polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/>',
+  bulb: '<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/>',
+  scale: '<path d="M12 3v18M5 7h14M6 7l-3 7h6l-3-7zm12 0-3 7h6l-3-7zM8 21h8"/>',
+  steth: '<path d="M4 3v6a4 4 0 0 0 8 0V3M8 13v3a5 5 0 0 0 10 0v-3"/><circle cx="18" cy="11" r="2"/>',
+  bank: '<path d="M3 10h18M5 10v8M10 10v8M14 10v8M19 10v8M2 18h20M12 3 2 8h20L12 3z"/>',
+  scroll: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+  award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>',
+  grad: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/>',
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  lab: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>',
+  layers: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
+  expand: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+  list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+  checksq: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  table: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'
+};
+function uiIco(name) {
+  const body = UI_ICONS[name];
+  return body ? `<svg class="ui-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>` : '';
+}
+
+function hubConfirm(title, desc, okLabel = 'Potwierdź', opts = {}) {
+  const dlg = $('#confirmModal');
+  if (!dlg || typeof dlg.showModal !== 'function') {
+    return Promise.resolve(window.confirm(desc || title));
+  }
+  const titleEl = $('#confirmTitle'), descEl = $('#confirmDesc'), okBtn = $('#confirmOk'), cancelBtn = $('#confirmCancel');
+  const prevFocus = document.activeElement;
+  if (titleEl) titleEl.textContent = title || 'Potwierdź akcję';
+  if (descEl) descEl.textContent = desc || '';
+  if (okBtn) {
+    okBtn.textContent = okLabel || 'Potwierdź';
+    okBtn.style.background = opts.danger ? 'var(--red)' : '';
+    okBtn.style.borderColor = opts.danger ? 'var(--red)' : '';
+  }
+  if (cancelBtn) cancelBtn.textContent = opts.cancelLabel || 'Anuluj';
+
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = val => {
+      if (settled) return;
+      settled = true;
+      okBtn && okBtn.removeEventListener('click', onOk);
+      cancelBtn && cancelBtn.removeEventListener('click', onCancel);
+      dlg.removeEventListener('cancel', onCancel);
+      dlg.removeEventListener('click', onBackdrop);
+      if (dlg.open) dlg.close();
+      if (prevFocus && typeof prevFocus.focus === 'function' && document.contains(prevFocus)) {
+        prevFocus.focus();
+      }
+      resolve(val);
+    };
+    const onOk = () => finish(true);
+    const onCancel = e => { if (e && e.type === 'cancel') e.preventDefault(); finish(false); };
+    const onBackdrop = e => { if (e.target === dlg) finish(false); };
+
+    okBtn && okBtn.addEventListener('click', onOk);
+    cancelBtn && cancelBtn.addEventListener('click', onCancel);
+    dlg.addEventListener('cancel', onCancel);
+    dlg.addEventListener('click', onBackdrop);
+    dlg.showModal();
+    if (opts.danger && cancelBtn) cancelBtn.focus();
+    else if (okBtn) okBtn.focus();
+  });
+}
+window.hubConfirm = hubConfirm;
+
+function hubExamQuitChoice(title, desc) {
+  const dlg = $('#confirmModal');
+  if (!dlg || typeof dlg.showModal !== 'function') {
+    return Promise.resolve(window.confirm(desc || title) ? 'finish' : 'cancel');
+  }
+  const titleEl = $('#confirmTitle'), descEl = $('#confirmDesc'), okBtn = $('#confirmOk'), cancelBtn = $('#confirmCancel');
+  const acts = $('.confirm-dlg-acts', dlg);
+  const prevFocus = document.activeElement;
+  if (titleEl) titleEl.textContent = title || 'Zakończyć egzamin?';
+  if (descEl) descEl.textContent = desc || '';
+  if (okBtn) {
+    okBtn.textContent = 'Zakończ i oceń';
+    okBtn.style.background = '';
+    okBtn.style.borderColor = '';
+  }
+  if (cancelBtn) cancelBtn.textContent = 'Wróć do egzaminu';
+
+  const abandonBtn = document.createElement('button');
+  abandonBtn.type = 'button';
+  abandonBtn.className = 'btn sec sm';
+  abandonBtn.style.color = 'var(--red)';
+  abandonBtn.style.borderColor = 'var(--red)';
+  abandonBtn.textContent = 'Porzuć bez zapisu';
+  if (acts && okBtn) acts.insertBefore(abandonBtn, okBtn);
+
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = val => {
+      if (settled) return;
+      settled = true;
+      okBtn && okBtn.removeEventListener('click', onFinish);
+      abandonBtn.removeEventListener('click', onAbandon);
+      cancelBtn && cancelBtn.removeEventListener('click', onCancel);
+      dlg.removeEventListener('cancel', onCancel);
+      dlg.removeEventListener('click', onBackdrop);
+      abandonBtn.remove();
+      if (dlg.open) dlg.close();
+      if (prevFocus && typeof prevFocus.focus === 'function' && document.contains(prevFocus)) {
+        prevFocus.focus();
+      }
+      resolve(val);
+    };
+    const onFinish = () => finish('finish');
+    const onAbandon = () => finish('abandon');
+    const onCancel = e => { if (e && e.type === 'cancel') e.preventDefault(); finish('cancel'); };
+    const onBackdrop = e => { if (e.target === dlg) finish('cancel'); };
+
+    okBtn && okBtn.addEventListener('click', onFinish);
+    abandonBtn.addEventListener('click', onAbandon);
+    cancelBtn && cancelBtn.addEventListener('click', onCancel);
+    dlg.addEventListener('cancel', onCancel);
+    dlg.addEventListener('click', onBackdrop);
+    dlg.showModal();
+    if (okBtn) okBtn.focus();
+  });
+}
 
 let lastStorageWarnAt = 0;
 function safeStorageSet(key, val) {
@@ -148,12 +296,12 @@ window.addEventListener('storage', ev => {
 /* ---------- obsługa motywu (Dark Mode + 6 palet) ---------- */
 const THEME_KEY = 'ginpol_hub_theme';
 const THEME_PALETTES = [
-  { id: 'navy', icon: '🌌', short: 'Navy', name: 'Deep Navy & Slate', desc: 'Głęboki granat i chłodny łupek', bg: '#111522', surface: '#1E263B', ink: '#DCE3EF', ink2: '#A8B8D0', accent: '#98A9C4', colors: ['#111522', '#1E263B', '#303D59', '#536684', '#98A9C4', '#DCE3EF'] },
-  { id: 'moss', icon: '🌲', short: 'Moss', name: 'Forest Moss & Sage', desc: 'Głęboki, naturalny i kojący', bg: '#0F1A15', surface: '#1C2F27', ink: '#E6EBE6', ink2: '#A6C3AC', accent: '#84A98C', colors: ['#0F1A15', '#1C2F27', '#2E4C3E', '#4E6E5D', '#84A98C', '#E6EBE6'] },
-  { id: 'espresso', icon: '☕', short: 'Espresso', name: 'Earthy Espresso & Sand', desc: 'Ciepłe espresso i piasek', bg: '#211B1A', surface: '#382A28', ink: '#E8D8CE', ink2: '#C9ABA0', accent: '#C1A094', colors: ['#211B1A', '#382A28', '#60433D', '#916B60', '#C1A094', '#E8D8CE'] },
-  { id: 'ochre', icon: '🏜️', short: 'Ochre', name: 'Burnt Ochre & Charcoal', desc: 'Ciepły, industrialny i rustykalny', bg: '#1A1715', surface: '#2E2520', ink: '#F7F0EA', ink2: '#DFC2A6', accent: '#D19A66', colors: ['#1A1715', '#2E2520', '#553E31', '#8C5D3A', '#D19A66', '#F7F0EA'] },
-  { id: 'purple', icon: '🔮', short: 'Lavender', name: 'Shadow Purple & Lavender', desc: 'Głęboki fiolet i lawenda', bg: '#17151C', surface: '#292531', ink: '#E2DDE7', ink2: '#BFB7C9', accent: '#AAA2B3', colors: ['#17151C', '#292531', '#45404F', '#716879', '#AAA2B3', '#E2DDE7'] },
-  { id: 'ocean', icon: '🌊', short: 'Ocean', name: 'Ocean Teal & Coral', desc: 'Chłodne tony oceaniczne z akcentem koralowym', bg: '#0A1924', surface: '#152E3C', ink: '#E8F2F6', ink2: '#9CC0CC', accent: '#FF9E80', colors: ['#0A1924', '#152E3C', '#294A5A', '#4C7282', '#94B9C5', '#FF9E80'] }
+  { id: 'navy', short: 'Navy', name: 'Deep Navy & Slate', desc: 'Głęboki granat i chłodny łupek', bg: '#111522', surface: '#1E263B', ink: '#DCE3EF', ink2: '#A8B8D0', accent: '#98A9C4', colors: ['#111522', '#1E263B', '#303D59', '#536684', '#98A9C4', '#DCE3EF'] },
+  { id: 'moss', short: 'Moss', name: 'Forest Moss & Sage', desc: 'Głęboki, naturalny i kojący', bg: '#0F1A15', surface: '#1C2F27', ink: '#E6EBE6', ink2: '#A6C3AC', accent: '#84A98C', colors: ['#0F1A15', '#1C2F27', '#2E4C3E', '#4E6E5D', '#84A98C', '#E6EBE6'] },
+  { id: 'espresso', short: 'Espresso', name: 'Earthy Espresso & Sand', desc: 'Ciepłe espresso i piasek', bg: '#211B1A', surface: '#382A28', ink: '#E8D8CE', ink2: '#C9ABA0', accent: '#C1A094', colors: ['#211B1A', '#382A28', '#60433D', '#916B60', '#C1A094', '#E8D8CE'] },
+  { id: 'ochre', short: 'Ochre', name: 'Burnt Ochre & Charcoal', desc: 'Ciepły, industrialny i rustykalny', bg: '#1A1715', surface: '#2E2520', ink: '#F7F0EA', ink2: '#DFC2A6', accent: '#D19A66', colors: ['#1A1715', '#2E2520', '#553E31', '#8C5D3A', '#D19A66', '#F7F0EA'] },
+  { id: 'purple', short: 'Lavender', name: 'Shadow Purple & Lavender', desc: 'Głęboki fiolet i lawenda', bg: '#17151C', surface: '#292531', ink: '#E2DDE7', ink2: '#BFB7C9', accent: '#AAA2B3', colors: ['#17151C', '#292531', '#45404F', '#716879', '#AAA2B3', '#E2DDE7'] },
+  { id: 'ocean', short: 'Ocean', name: 'Ocean Teal & Coral', desc: 'Chłodne tony oceaniczne z akcentem koralowym', bg: '#0A1924', surface: '#152E3C', ink: '#E8F2F6', ink2: '#9CC0CC', accent: '#FF9E80', colors: ['#0A1924', '#152E3C', '#294A5A', '#4C7282', '#94B9C5', '#FF9E80'] }
 ];
 const THEME_BY_ID = Object.fromEntries(THEME_PALETTES.map(p => [p.id, p]));
 const THEME_ORDER = ['auto', 'light', 'dark', ...THEME_PALETTES.map(p => p.id)];
@@ -181,7 +329,7 @@ function applyTheme(t, persist = true) {
     tc.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || (p ? p.bg : eff === 'dark' ? '#090C0E' : '#F5F6F2');
   }
   updateThemeUI();
-  syncIframeTheme(eff === 'light' ? 'light' : 'dark');
+  syncIframeTheme(eff);
 }
 
 function updateThemeUI() {
@@ -207,7 +355,16 @@ function updateThemeUI() {
     }
   }
   $$('[data-theme-choice]').forEach(b => {
-    b.setAttribute('aria-pressed', b.dataset.themeChoice === currentTheme);
+    const active = b.dataset.themeChoice === currentTheme;
+    if (b.getAttribute('role') === 'menuitemradio') {
+      b.setAttribute('aria-checked', String(active));
+      b.removeAttribute('aria-pressed');
+      b.style.background = active ? 'var(--teal-xl)' : '';
+      b.style.borderColor = active ? 'var(--teal-b)' : '';
+      b.style.color = active ? 'var(--teal-d)' : '';
+    } else {
+      b.setAttribute('aria-pressed', String(active));
+    }
   });
 }
 
@@ -221,14 +378,15 @@ function cycleTheme() {
 }
 
 function syncIframeTheme(eff) {
+  const theme = eff || 'light';
   const rf = $('#rf');
   if (rf && rf.contentDocument && rf.contentDocument.documentElement) {
     rf.contentDocument.documentElement.classList.add('hub-embedded');
-    if (eff === 'dark') rf.contentDocument.documentElement.dataset.theme = 'dark';
+    if (theme !== 'light') rf.contentDocument.documentElement.dataset.theme = theme;
     else delete rf.contentDocument.documentElement.dataset.theme;
   }
   if (rf && rf.contentWindow) {
-    try { rf.contentWindow.postMessage({ type: 'SET_THEME', theme: eff }, '*'); } catch (e) {}
+    try { rf.contentWindow.postMessage({ type: 'SET_THEME', theme }, '*'); } catch (e) {}
   }
 }
 
@@ -445,7 +603,19 @@ function renderGraph(host, o = {}) {
       <title>[${m.id}] ${esc(m.n)}${m.at ? '' : ' (brak atlasu)'}</title></g>`;
   }).join('');
 
-  host.innerHTML = `<svg class="gsvg" viewBox="-40 -6 680 612" role="group" aria-label="Mapa powiązań między modułami">${arcs}<g class="edges">${edges}</g>${nodes}</svg>`;
+  const groupLabelsSvg = o.groupLabels ? Object.keys(GROUPS).map(g => {
+    const ms = MODS.filter(m => m.g === g);
+    if (!ms.length) return '';
+    const midA = (pos[ms[0].id].a + pos[ms[ms.length - 1].id].a) / 2;
+    const c = Math.cos(midA), s = Math.sin(midA);
+    const lx = cx + (R + 40) * c;
+    const ly = cy + (R + 40) * s + (s > 0.5 ? 10 : s < -0.5 ? -4 : 4);
+    const anchor = c > 0.2 ? 'start' : c < -0.2 ? 'end' : 'middle';
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" fill="${GROUPS[g].color}" font-size="12.5" font-weight="800" letter-spacing="0.02em" pointer-events="none">${esc(GROUPS[g].short)}</text>`;
+  }).join('') : '';
+
+  const vb = o.groupLabels ? '-76 -18 752 636' : '-40 -6 680 612';
+  host.innerHTML = `<svg class="gsvg" viewBox="${vb}" role="group" aria-label="Mapa powiązań między modułami">${arcs}<g class="edges">${edges}</g>${nodes}${groupLabelsSvg}</svg>`;
   const svg = $('svg', host);
 
   const clear = () => {
@@ -519,9 +689,9 @@ function renderGraph(host, o = {}) {
 
   $$('.node', svg).forEach(nd => {
     const id = nd.dataset.m;
-    nd.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') litNode(id); });
+    nd.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { litNode(id); if (o.onHover) o.onHover(id); } });
     nd.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') restore(); });
-    nd.addEventListener('focus', () => litNode(id));
+    nd.addEventListener('focus', () => { litNode(id); if (o.onHover) o.onHover(id); });
     nd.addEventListener('blur', restore);
     const act = () => o.onNode && o.onNode(id);
     nd.addEventListener('click', act);
@@ -549,11 +719,11 @@ function explain(q) {
   let h = '';
   if (q.type === 'open' && q.ans) h += `<div class="why"><h4>Odpowiedź</h4><p>${rich(q.ans)}</p></div>`;
   if (q.zal && q.akt) {
-    h += `<div class="dual"><div class="dbox z"><h4>🏛️ Do zaliczenia (wg klucza zakładu)</h4>${rich(q.zal)}</div><div class="dbox a"><h4>🩺 Aktualna wiedza kliniczna</h4>${rich(q.akt)}</div></div>`;
+    h += `<div class="dual"><div class="dbox z"><h4>${uiIco('bank')} Do zaliczenia (wg klucza zakładu)</h4>${rich(q.zal)}</div><div class="dbox a"><h4>${uiIco('steth')} Aktualna wiedza kliniczna</h4>${rich(q.akt)}</div></div>`;
   } else if (q.zal) {
-    h += `<div class="dual"><div class="dbox z"><h4>🏛️ Do zaliczenia (wg klucza zakładu)</h4>${rich(q.zal)}</div></div>`;
+    h += `<div class="dual"><div class="dbox z"><h4>${uiIco('bank')} Do zaliczenia (wg klucza zakładu)</h4>${rich(q.zal)}</div></div>`;
   } else if (q.akt) {
-    h += `<div class="dual"><div class="dbox a"><h4>🩺 Aktualna wiedza kliniczna</h4>${rich(q.akt)}</div></div>`;
+    h += `<div class="dual"><div class="dbox a"><h4>${uiIco('steth')} Aktualna wiedza kliniczna</h4>${rich(q.akt)}</div></div>`;
   }
   if (q.why || (q.fig && q.fig.src)) {
     const whyBody = q.why ? (/<p>/i.test(q.why) ? rich(q.why) : '<p>' + rich(q.why) + '</p>') : '';
@@ -567,12 +737,12 @@ function explain(q) {
     const originFallback = q.isCustom ? 'Własne pytanie' : (q.bank === 'modulowa' ? 'Baza modułowa' : 'Baza zakładowa');
     h += `<details class="q-source-details">
       <summary><span class="muted" style="font-size:.76rem;cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;flex-wrap:wrap">
-        📜 Pochodzenie pytania (${q.reps ? q.reps + 'x' : '1x'})${q.id ? ` <code class="q-id-badge" title="Unikatowy identyfikator zadania">${esc(q.id)}</code>` : ''} <span style="opacity:.6;font-size:.68rem">▾</span>
+        ${uiIco('scroll')} Pochodzenie pytania (${q.reps ? q.reps + 'x' : '1x'})${q.id ? ` <code class="q-id-badge" title="Unikatowy identyfikator zadania">${esc(q.id)}</code>` : ''} <span style="opacity:.6;font-size:.68rem">▾</span>
       </span></summary>
       <div class="q-source-box">
         ${q.id ? `<div class="q-id-row"><strong>ID zadania:</strong> <code class="q-id-badge">${esc(q.id)}</code> <button type="button" class="q-id-copy" data-copy-id="${esc(q.id)}" title="Kopiuj ID zadania">Kopiuj ID</button></div>` : ''}
         <strong>Źródła w puli:</strong> ${esc(q.src || originFallback)}
-        ${q.isGlued ? '<div style="color:var(--amber);margin-top:.35rem;font-weight:700">⚠️ Uwaga: Pytanie sklejone z wieloczęściowego skanu OCR testu historycznego.</div>' : ''}
+        ${q.isGlued ? `<div style="color:var(--amber);margin-top:.35rem;font-weight:700">${uiIco('warn')} Uwaga: Pytanie sklejone z wieloczęściowego skanu OCR testu historycznego.</div>` : ''}
         ${q.adapt ? '<div class="muted" style="margin-top:.25rem">Opcje odpowiedzi uzupełnione lub zrekonstruowane.</div>' : ''}
       </div>
     </details>`;
@@ -593,7 +763,9 @@ function qCardActs(q) {
 }
 function qCardBody(q, interactive) {
   const hasKey = q.keys && q.keys.length > 0;
-  const metaRow = `<div class="tags qc-meta">${bankChip(q.bank)}${hasKey ? confChip(q.conf) : '<span class="chip" style="background:var(--amber-l);color:var(--amber);border-color:transparent" title="Brak oficjalnego klucza w puli zakładu (do dyskusji)">Do dyskusji (brak klucza)</span>'}${q.why ? '<span class="chip" style="background:var(--blue-l);color:var(--blue);border-color:transparent" title="Zawiera omówienie merytoryczne">Omówienie</span>' : ''}${q.isGlued ? '<span class="chip glued" title="Pytanie złożone z kilku zagadnień ze skanu OCR">⚠️ Pytanie łączone (OCR)</span>' : ''}<span class="chip">${esc(ASHORT[q.at] || 'Moduł')}</span></div>`;
+  const isHit = q.reps && q.reps >= 2;
+  const extraMods = (q.mods || []).length > 1 ? modChips(q) : '';
+  const metaRow = `<div class="tags qc-meta">${extraMods}${hasKey ? confChip(q.conf) : '<span class="chip" style="background:var(--amber-l);color:var(--amber);border-color:transparent" title="Brak oficjalnego klucza w puli zakładu (do dyskusji)">Do dyskusji (brak klucza)</span>'}${q.gap ? `<span class="chip gap" title="Rozbieżność między kluczem zaliczenia a wytycznymi">${uiIco('warn')} Klucz ≠ PTGiP</span>` : ''}${isHit ? `<span class="chip hit" title="Powtórzone w ${q.reps} źródłach">${uiIco('flame')} Hit (${q.reps}x)</span>` : ''}${q.why ? '<span class="chip" style="background:var(--blue-l);color:var(--blue);border-color:transparent" title="Zawiera omówienie merytoryczne">Omówienie</span>' : ''}${q.isGlued ? `<span class="chip glued" title="Pytanie złożone z kilku zagadnień ze skanu OCR">${uiIco('warn')} Pytanie łączone (OCR)</span>` : ''}<span class="chip">${esc(ASHORT[q.at] || 'Moduł')}</span></div>`;
   if (interactive) {
     if (q.type === 'open' || !q.opts || !q.opts.length) {
       return `${metaRow}<div class="acts"><button type="button" class="btn dark sm" data-qreveal>Pokaż odpowiedź i omówienie ▾</button></div><div class="qc-exp"></div>${qCardActs(q)}`;
@@ -608,14 +780,23 @@ function qCard(q, open, interactive) {
   const a = S.ans[q.id];
   const isHit = q.reps && q.reps >= 2;
   const hasKey = q.keys && q.keys.length > 0;
-  let sigChip = '';
-  if (q.gap) sigChip = '<span class="chip gap" title="Rozbieżność między kluczem zaliczenia a wytycznymi">⚠️ Rozbieżność klucz vs wytyczne</span>';
-  else if (isHit) sigChip = `<span class="chip hit" title="Powtórzone w ${q.reps} niezależnych źródłach / rocznikach">🔥 Hit bazy (${q.reps}x)</span>`;
-  else if (q.type === 'open') sigChip = '<span class="chip" style="background:var(--violet-l);color:var(--violet);font-weight:700">Fiszka / Otwarte</span>';
-  else if (!hasKey) sigChip = '<span class="chip" style="background:var(--amber-l);color:var(--amber);border-color:transparent" title="Brak oficjalnego klucza w puli zakładu (do dyskusji)">Do dyskusji</span>';
+  const pm = q.pm || (q.mods && q.mods[0]) || '1';
+  const pmChip = `<span class="chip m" style="${modById[pm] ? 'color:' + gOf(pm).color : ''}" title="${esc(modById[pm]?.n || '')}">[${esc(pm)}] ${esc(SHORT[pm] || '')}</span>`;
+  let priorityChip = '';
+  if (a) {
+    priorityChip = `<span class="chip" data-qstatus style="background:${a.last ? 'var(--green-l)' : 'var(--red-l)'};color:${a.last ? 'var(--green)' : 'var(--red)'};border-color:transparent">${a.last ? 'opanowane' : 'do powtórki'}</span>`;
+  } else if (q.gap) {
+    priorityChip = `<span class="chip gap" data-qsig title="Rozbieżność między kluczem zaliczenia a wytycznymi">${uiIco('warn')} Klucz ≠ PTGiP</span>`;
+  } else if (isHit) {
+    priorityChip = `<span class="chip hit" data-qsig title="Powtórzone w ${q.reps} niezależnych źródłach">${uiIco('flame')} Hit (${q.reps}x)</span>`;
+  } else if (q.type === 'open') {
+    priorityChip = '<span class="chip" data-qsig style="background:var(--violet-l);color:var(--violet);font-weight:700">Fiszka</span>';
+  } else if (!hasKey) {
+    priorityChip = '<span class="chip" data-qsig style="background:var(--amber-l);color:var(--amber);border-color:transparent" title="Brak oficjalnego klucza w puli zakładu (do dyskusji)">Do dyskusji</span>';
+  }
   return `<details class="qc" data-q="${esc(q.id)}"${open ? ' open' : ''}>
     <summary><div><div class="stem">${escB(q.stem)}</div>
-      <div class="tags">${modChips(q)}${sigChip}${a ? `<span class="chip" data-qstatus style="background:${a.last ? 'var(--green-l)' : 'var(--red-l)'};color:${a.last ? 'var(--green)' : 'var(--red)'};border-color:transparent">${a.last ? 'opanowane' : 'do powtórki'}</span>` : ''}</div></div>
+      <div class="tags">${bankChip(q.bank)}${pmChip}${priorityChip}</div></div>
       <span class="chev" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 4 4 4 4-4"/></svg></span></summary>
     <div class="body">${open ? qCardBody(q, !!interactive) : ''}</div></details>`;
 }
@@ -624,6 +805,8 @@ function updateCardStatusChip(det, ok) {
   if (!tags) return;
   let chip = $('[data-qstatus]', tags);
   if (!chip) {
+    const oldSig = $('[data-qsig]', tags);
+    if (oldSig) oldSig.remove();
     chip = document.createElement('span');
     chip.className = 'chip';
     chip.dataset.qstatus = '';
@@ -698,12 +881,13 @@ function delegateBm(root, onMutate) {
     const del = e.target.closest('[data-del]');
     if (del) {
       e.preventDefault(); const id = del.dataset.del;
-      if (confirm('Czy na pewno chcesz usunąć to pytanie z bazy własnych?')) {
+      hubConfirm('Usunąć własne pytanie?', 'Czy na pewno chcesz usunąć to pytanie z bazy własnych? Operacji nie można cofnąć.', 'Usuń pytanie', { danger: true }).then(ok => {
+        if (!ok) return;
         CUSTOM_Q = CUSTOM_Q.filter(x => x.id !== id);
         saveCustomQ();
         toast('Pytanie zostało usunięte');
         if (onMutate) onMutate();
-      }
+      });
       return;
     }
     const qcOpt = e.target.closest('details.qc button.opt[data-opt]');
@@ -757,58 +941,136 @@ let pendingRetryIds = null;
 let pendingAutoTrain = false;
 const KLINIKA_ROUTES = new Set(['pacjent', 'kalkulator', 'badania', 'kalendarz']);
 const WIECEJ_ROUTES = new Set(['egzamin', 'polaczenia', 'graf', 'notatki', 'postep']);
+const EXAM_ACTIVE_KEY = 'ginpol_hub_exam_active_v1';
 
-function closeNavDropdowns() {
+function getVisibleMenuItems(pop) {
+  return $$('[role="menuitem"], [role="menuitemradio"]', pop).filter(el => el.offsetParent !== null);
+}
+
+function closeNavDropdowns(restoreFocus = false) {
+  let focusedBtn = null;
   $$('.nav-dd').forEach(dd => {
     const btn = $('.nav-dd-btn', dd);
     const pop = $('.nav-pop', dd);
+    const wasOpen = btn && btn.getAttribute('aria-expanded') === 'true';
+    if (wasOpen && restoreFocus) focusedBtn = btn;
     if (btn) btn.setAttribute('aria-expanded', 'false');
     if (pop) pop.hidden = true;
   });
+  if (focusedBtn) focusedBtn.focus();
 }
 
 function initNavMenus() {
-  $$('.nav-dd-btn').forEach(btn => {
+  $$('.nav-dd').forEach(dd => {
+    const btn = $('.nav-dd-btn', dd);
+    const pop = $('.nav-pop', dd);
+    if (!btn || !pop) return;
+    const openMenu = focusIdx => {
+      closeNavDropdowns();
+      btn.setAttribute('aria-expanded', 'true');
+      pop.hidden = false;
+      if (focusIdx !== undefined) {
+        const items = getVisibleMenuItems(pop);
+        if (items.length) items[(focusIdx + items.length) % items.length].focus();
+      }
+    };
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const dd = btn.closest('.nav-dd');
-      const pop = $('.nav-pop', dd);
       const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      closeNavDropdowns();
-      if (!isOpen && pop) {
-        btn.setAttribute('aria-expanded', 'true');
-        pop.hidden = false;
-      }
+      if (isOpen) closeNavDropdowns();
+      else openMenu();
+    });
+    btn.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); openMenu(0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); openMenu(-1); }
+    });
+    pop.addEventListener('keydown', e => {
+      const items = getVisibleMenuItems(pop);
+      if (!items.length) return;
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); items[(idx + 1) % items.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[(idx - 1 + items.length) % items.length].focus(); }
+      else if (e.key === 'Home') { e.preventDefault(); items[0].focus(); }
+      else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeNavDropdowns(true); }
+      else if (e.key === 'Tab') { closeNavDropdowns(false); }
     });
   });
   document.addEventListener('click', e => { if (!e.target.closest('.nav-dd')) closeNavDropdowns(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNavDropdowns(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNavDropdowns(true); });
 }
 
-function route() {
-  closeNavDropdowns();
-  onBmMutate = null;
-  const { parts, params } = parseHash(); const name = parts[0] || 'start';
-  if (name !== 'egzamin' && EXAM_SESSION && EXAM_SESSION.timer) {
-    clearInterval(EXAM_SESSION.timer);
-    EXAM_SESSION.timer = null;
-  }
-  // czytnik: ten sam atlas → tylko kotwica
-  if (name === 'atlas' && current.name === 'atlas' && current.id === parts[1] && $('#rf')) { setAnchor(parts[1], parts[2]); return; }
-  document.body.classList.toggle('reader', name === 'atlas');
-  if (name !== 'atlas') document.body.classList.remove('reader-focus');
-  $$('#menu a[data-r]').forEach(a => { const r = a.dataset.r; a.classList.toggle('on', r === name || (r === 'atlasy' && name === 'atlas')); });
+function setActiveNav(name) {
+  $$('#menu a[data-r]').forEach(a => {
+    const r = a.dataset.r;
+    const active = r === name || (r === 'atlasy' && name === 'atlas');
+    a.classList.toggle('on', active);
+    if (active) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
   $$('#menu .nav-dd').forEach(dd => {
     const btn = $('.nav-dd-btn', dd);
     if (!btn) return;
     const isMatch = (dd.dataset.group === 'klinika' && KLINIKA_ROUTES.has(name)) || (dd.dataset.group === 'wiecej' && WIECEJ_ROUTES.has(name));
     btn.classList.toggle('on', isMatch);
   });
+}
+
+function mountExamResumeBar(routeName) {
+  if (routeName === 'egzamin') return;
+  const active = (EXAM_SESSION && !EXAM_SESSION.finished) ? EXAM_SESSION : loadActiveExam();
+  if (!active || active.finished || !active.list || !active.list.length) return;
+  const answered = Object.keys(active.userAnswers || {}).filter(k => active.userAnswers[k] && active.userAnswers[k].size).length;
+  const total = active.list.length;
+  const rem = active.remainingSec;
+  const remTxt = rem != null
+    ? ` · pozostało ${String(Math.floor(Math.max(0, rem) / 60)).padStart(2, '0')}:${String(Math.max(0, rem) % 60).padStart(2, '0')}`
+    : '';
+  const host = document.createElement('div');
+  host.className = 'wrap';
+  host.style.paddingTop = '.85rem';
+  host.innerHTML = `<div class="exam-resume-bar" role="region" aria-label="Aktywny egzamin próbny">
+    <span>${uiIco('clock')} <b>Egzamin próbny w toku</b> (${answered}/${total}${remTxt})</span>
+    <div class="exam-resume-acts">
+      <a class="btn pri sm" href="#/egzamin">Wznów</a>
+      <button type="button" class="btn sec sm" id="btnAbandonBannerExam" style="color:var(--red)">Porzuć</button>
+    </div>
+  </div>`;
+  main.prepend(host);
+  const abBtn = $('#btnAbandonBannerExam', host);
+  if (abBtn) {
+    abBtn.onclick = async () => {
+      const ok = await hubConfirm('Porzucić egzamin próbny?', `Egzamin w toku (${answered}/${total} odpowiedzi) zostanie usunięty bez zapisywania w historii.`, 'Porzuć egzamin', { danger: true });
+      if (!ok) return;
+      clearActiveExam();
+      host.remove();
+      toast('Porzucono egzamin próbny');
+    };
+  }
+}
+
+function route() {
+  closeNavDropdowns();
+  onBmMutate = null;
+  const { parts, params } = parseHash(); const name = parts[0] || 'start';
+  if (name !== 'egzamin' && EXAM_SESSION && !EXAM_SESSION.finished) {
+    if (EXAM_SESSION.timer) {
+      clearInterval(EXAM_SESSION.timer);
+      EXAM_SESSION.timer = null;
+    }
+    saveActiveExam();
+  }
+  // czytnik: ten sam atlas → tylko kotwica
+  if (name === 'atlas' && current.name === 'atlas' && current.id === parts[1] && $('#rf')) { setAnchor(parts[1], parts[2]); return; }
+  document.body.classList.toggle('reader', name === 'atlas');
+  if (name !== 'atlas') document.body.classList.remove('reader-focus');
+  setActiveNav(name);
   const v = { start: viewStart, atlasy: viewGallery, atlas: viewReader, trening: viewTrening, egzamin: viewExam, pacjent: clinicalPatient.viewPatient, kalkulator: clinicalCalc.viewCalculator || clinicalCalc.viewCalc, kalendarz: viewKalendarz, badania: clinicalDiagnostics.viewDiagnostics, pytania: viewQuestions, notatki: viewNotes, polaczenia: viewConnections, graf: viewKnowledgeGraph, postep: viewProgress }[name];
   current = { name, id: parts[1] || null };
   main.classList.remove('view'); void main.offsetWidth; main.classList.add('view');
   if (!v) { location.hash = '#/'; return; }
   v(parts, params);
+  mountExamResumeBar(name);
   renderFooter();
   if (name !== 'atlas') window.scrollTo(0, 0);
 }
@@ -847,7 +1109,7 @@ function viewStart() {
         <div class="stat"><b data-n="${gapCount}">${gapCount}</b><span>rozbieżności klucz ↔ PTGiP</span></div>
       </div>
     </div>
-    <div class="hero-viz"><div id="heroGraph"></div><p class="cap"><b>Mapa powiązań OB/GYN.</b> Najedź na węzeł, aby zobaczyć moduły połączone wspólnymi pułapkami i zadaniami.</p></div>
+    <div class="hero-viz"><div id="heroGraph"></div><div class="hero-graph-cap" id="heroGraphCap" aria-live="polite"></div></div>
   </div></section>
 
   <section class="blk" id="mapa"><div class="wrap">
@@ -856,7 +1118,7 @@ function viewStart() {
     <div class="map">${Object.keys(GROUPS).map(g => `<div class="mgroup" style="--gc:${GROUPS[g].color}"><div class="gl">Obszar ${g}</div><h3>${GROUPS[g].name}</h3><div class="stack">${MODS.filter(m => m.g === g).map(m => {
       const st = modStats(m.id);
       const hasAtlas = !!(m.at && atById[m.at]);
-      const href = hasAtlas ? `#/atlas/${m.at}/${m.a}` : `#/pytania?tab=browse&mod=${m.id}`;
+      const href = hasAtlas ? `#/atlas/${m.at}/${m.a}` : `#/pytania?tab=browse&mods=${m.id}`;
       const right = st.att ? `<span class="acc">${pct(st.ok, st.att)}%</span>` : `<span class="acc">${st.total} pyt.</span>`;
       return `<a class="mtile${hasAtlas ? '' : ' miss'}" href="${href}" style="--gc:${GROUPS[m.g].color}"><span class="nb">${m.id}</span><span><b>${esc(m.n)}</b><small>${esc(m.d)}</small></span>${right}</a>`;
     }).join('')}</div></div>`).join('')}</div>
@@ -894,14 +1156,34 @@ function viewStart() {
     <div class="agrid">${TRAPS.slice(0, 3).map(t => `<a class="acard" href="#/polaczenia?trap=${TRAPS.indexOf(t)}" style="--c1:var(--red);--c2:var(--amber)"><div class="pillrow">${t.mods.map(m => `<span class="chip m" style="color:${gOf(m).color}">[${m}]</span>`).join('')}</div><h3>${esc(t.t)}</h3><p>${esc(t.eq)}</p><p style="color:var(--red);font-weight:800">${esc(t.out)}</p></a>`).join('')}</div>
     <p style="margin-top:1.2rem"><a class="btn pri" href="#/polaczenia">Otwórz mapę połączeń →</a></p>
   </div></section>`;
-  renderGraph($('#heroGraph'), { labels: false, draw: true, onNode: id => { const m = modById[id]; location.hash = (m && m.at && atById[m.at]) ? '#/atlas/' + m.at + '/' + m.a : '#/polaczenia?mod=' + id; } });
+  const heroCap = $('#heroGraphCap');
+  const updateHeroCap = id => {
+    const m = modById[id] || MODS[0];
+    if (!heroCap || !m) return;
+    const hasAtlas = !!(m.at && atById[m.at]);
+    const href = hasAtlas ? `#/atlas/${m.at}/${m.a}` : `#/pytania?tab=browse&mods=${m.id}`;
+    const st = modStats(m.id);
+    heroCap.innerHTML = `<span><span class="chip m" style="color:${gOf(m.id).color};margin-right:.35rem">[${m.id}]</span><b>${esc(m.n)}</b> · ${esc(GROUPS[m.g].short)} (${st.total} pyt.)</span><a href="${href}">Otwórz moduł →</a>`;
+  };
+  let heroG = null;
+  heroG = renderGraph($('#heroGraph'), {
+    labels: false,
+    groupLabels: true,
+    draw: true,
+    onHover: id => updateHeroCap(id),
+    onNode: id => {
+      if (heroG) { heroG.pin([id]); heroG.litNode(id); }
+      updateHeroCap(id);
+    }
+  });
+  updateHeroCap('1');
   if (!reduce) $$('[data-n]').forEach(el => { const t = +el.dataset.n; const t0 = performance.now(); (function tick(now) { const p = Math.min(1, (now - t0) / 800); el.textContent = Math.round(t * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); })(t0); });
 }
 
 /* ---------- GALERIA ATLASÓW ---------- */
 function viewGallery() {
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
-    <h2>${ATLASES.length} atlasów modułowych</h2>
+    <h1>${ATLASES.length} atlasów modułowych</h1>
     <p class="lead">Atlasy działają wewnątrz hubu, ale zachowują własną nawigację. Ostatnio otwarte są oznaczone.</p>
     <div class="agrid">${ATLASES.map(a => {
       const qs = Q.filter(q => q.at === a.id), g = GA[a.id]; const vis = S.visited[a.id];
@@ -944,7 +1226,7 @@ function viewReader(parts) {
     <label class="sr" for="secSel">Przejdź do sekcji</label>
     <select id="secSel" class="tgl rbar-sec-sel"><option value="">Sekcje…</option>${at.secs.map(s => `<option value="${s[0]}">${esc(s[1])}</option>`).join('')}</select>
     <a class="btn pri sm" href="#/trening?at=${id}">Trening z atlasu</a>
-    <button type="button" class="btn sec sm rbar-focus-btn" id="rbarFocus" aria-pressed="${document.body.classList.contains('reader-focus')}" title="Tryb skupienia (ukryj górny i dolny pasek)" aria-label="Tryb skupienia">⛶</button>
+    <button type="button" class="btn sec sm rbar-focus-btn" id="rbarFocus" aria-pressed="${document.body.classList.contains('reader-focus')}" title="Tryb skupienia (ukryj górny i dolny pasek)" aria-label="Tryb skupienia">${uiIco('expand')}</button>
     <a class="btn sec sm" target="_blank" rel="noopener" href="atlasy/${at.dir}/index.html" title="Otwórz atlas w osobnej karcie" aria-label="Otwórz atlas w osobnej karcie">↗</a>
   </div></div>
   <iframe id="rf" class="rframe" title="Atlas: ${esc(at.t)}" src="" loading="eager"></iframe>`;
@@ -1015,9 +1297,10 @@ function viewConnections(parts, params) {
   let currentMasteryFilter = 'all';
   let currentTrapFilter = 'all';
 
+  const totalClusters = (SYMPTOM_CLUSTERS || []).length;
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
     <div class="eyebrow">Połączenia międzymodułowe · Silnik integracji klinicznej</div>
-    <h2>Gdzie tematy się przecinają</h2>
+    <h1>Gdzie tematy się przecinają</h1>
     <p class="lead" style="margin-bottom:1.4rem">Eksploruj powiązania między modułami: ścieżki różnicowania objawowego z algorytmami decyzyjnymi, głębokie wikilinki do sekcji atlasów oraz mapę pytań i pułapek z wizualizacją Twojego opanowania.</p>
 
     <!-- OMNIBAR OBJAWÓW (Symptom Explorer) -->
@@ -1025,16 +1308,16 @@ function viewConnections(parts, params) {
       <div class="conn-omnibar-header">
         <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
           <span style="font-weight:800;font-size:.95rem;color:var(--ink);display:flex;align-items:center;gap:.4rem">
-            <span>🩺</span> Symptom Explorer: 8 Zespołów Różnicowych
+            ${uiIco('steth')} Symptom Explorer: ${totalClusters} Zespołów Różnicowych
           </span>
-          <span class="chip" style="font-size:.72rem;background:var(--teal-l);color:var(--teal-d);border:0;font-weight:700">Wysokopunktowane LĘK / PES / OSCE</span>
+          <span class="chip" style="font-size:.72rem;background:var(--teal-l);color:var(--teal-d);border:0;font-weight:700">Wysokopunktowane LEK / PES / OSCE</span>
         </div>
         <div class="conn-omnibar-filters" id="omnibarTags">
-          <button class="omnibar-tag-btn active" data-tag="all">Wszystkie (8)</button>
-          <button class="omnibar-tag-btn" data-tag="brzuszne">Brzuszne</button>
-          <button class="omnibar-tag-btn" data-tag="zakaźne">Zakaźne & Skazy</button>
-          <button class="omnibar-tag-btn" data-tag="nerkowe">Nerkowe</button>
-          <button class="omnibar-tag-btn" data-tag="stany-nagle">Stany nagłe & OUN</button>
+          <button class="omnibar-tag-btn active" data-tag="all">Wszystkie (${totalClusters})</button>
+          <button class="omnibar-tag-btn" data-tag="stany-nagle">Stany nagłe OB/GYN</button>
+          <button class="omnibar-tag-btn" data-tag="patologia-ciazy">Patologia ciąży</button>
+          <button class="omnibar-tag-btn" data-tag="ginekologia">Ginekologia &amp; AUB</button>
+          <button class="omnibar-tag-btn" data-tag="onkologia">Onkologia &amp; Guzy</button>
         </div>
       </div>
 
@@ -1047,9 +1330,9 @@ function viewConnections(parts, params) {
     <div id="diffDecisionCardHost"></div>
 
     <div class="conn-tabs" role="tablist" style="margin-top:1.8rem">
-      <button class="conn-tab-btn ${activeTab === 'atlas' ? 'active' : ''}" data-tab="atlas" role="tab" aria-selected="${activeTab === 'atlas'}">🗺️ Mapa Atlasów i Wikilinków (Głębokie powiązania)</button>
-      <button class="conn-tab-btn ${activeTab === 'pytania' ? 'active' : ''}" data-tab="pytania" role="tab" aria-selected="${activeTab === 'pytania'}">🎯 Mapa Zadań i Pułapek (Baza pytań & Opanowanie)</button>
-      <a class="conn-tab-btn" href="#/graf" style="margin-left:auto;text-decoration:none">🕸️ Otwórz Graf wiedzy →</a>
+      <button class="conn-tab-btn ${activeTab === 'atlas' ? 'active' : ''}" data-tab="atlas" role="tab" aria-selected="${activeTab === 'atlas'}">${uiIco('map')} Mapa Atlasów i Wikilinków (Głębokie powiązania)</button>
+      <button class="conn-tab-btn ${activeTab === 'pytania' ? 'active' : ''}" data-tab="pytania" role="tab" aria-selected="${activeTab === 'pytania'}">${uiIco('target')} Mapa Zadań i Pułapek (Baza pytań &amp; Opanowanie)</button>
+      <a class="conn-tab-btn" href="#/graf" style="margin-left:auto;text-decoration:none">${uiIco('graph')} Otwórz Graf wiedzy →</a>
     </div>
     <div id="connTabContent"></div>
   </div></section>`;
@@ -1058,14 +1341,14 @@ function viewConnections(parts, params) {
   const clustersRow = $('#clusterChipsRow');
   const cardHost = $('#diffDecisionCardHost');
 
-  // Renderowanie kafelków w Omnibarze
+  // Renderowanie kafelków w Omnibarze (mapowanie dla 6 zespołów OB/GYN s1–s6)
   function renderClusterChips(tag = 'all') {
     const clusters = (SYMPTOM_CLUSTERS || []).filter(c => {
       if (tag === 'all') return true;
-      if (tag === 'brzuszne') return c.id === 's1' || c.id === 's6';
-      if (tag === 'zakaźne') return c.id === 's2' || c.id === 's7';
-      if (tag === 'nerkowe') return c.id === 's3' || c.id === 's8';
-      if (tag === 'stany-nagle') return c.id === 's4' || c.id === 's5';
+      if (tag === 'stany-nagle') return c.id === 's1' || c.id === 's2' || c.id === 's3';
+      if (tag === 'patologia-ciazy') return c.id === 's1' || c.id === 's3' || c.id === 's4';
+      if (tag === 'ginekologia') return c.id === 's2' || c.id === 's5' || c.id === 's6';
+      if (tag === 'onkologia') return c.id === 's5' || c.id === 's6';
       return true;
     });
 
@@ -1131,7 +1414,7 @@ function viewConnections(parts, params) {
       <div class="diff-card-wrapper" id="activeDiffCard">
         <div class="diff-card-header">
           <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-            <span style="font-size:1.6rem">${cluster.icon}</span>
+            <span style="font-size:1.15rem;font-weight:800;font-family:var(--font-mono);color:var(--teal-d)">${esc(cluster.icon)}</span>
             <div>
               <div style="display:flex;align-items:center;gap:.5rem">
                 <span class="chip" style="font-size:.7rem;font-weight:700">${esc(cluster.tag)}</span>
@@ -1142,12 +1425,12 @@ function viewConnections(parts, params) {
               <h3 style="margin:.25rem 0 0;font-size:1.3rem;font-family:var(--font-display)">${esc(cluster.name)}</h3>
             </div>
           </div>
-          <button class="btn sec sm" id="btnCloseDiffCard" style="margin-left:auto" title="Zwiń kartę różnicowania">✕ Zwiń kartę</button>
+          <button class="btn sec sm" id="btnCloseDiffCard" style="margin-left:auto" title="Zwiń kartę różnicowania">${uiIco('x')} Zwiń kartę</button>
         </div>
 
         <!-- RED FLAGS -->
         <div class="diff-box red-flags">
-          <div class="diff-box-title">🚨 Czerwone flagi (Red Flags – Natychmiastowa ocena SOR/OIT)</div>
+          <div class="diff-box-title">${uiIco('alert')} Czerwone flagi (Red Flags – Natychmiastowa ocena Izby Przyjęć)</div>
           <ul class="diff-list">
             ${cluster.redFlags.map(rf => `<li>${esc(rf)}</li>`).join('')}
           </ul>
@@ -1155,7 +1438,7 @@ function viewConnections(parts, params) {
 
         <!-- KEY RULE -->
         <div class="diff-box key-rule">
-          <div class="diff-box-title">⚖️ Klucz rozstrzygający (Badanie z wyboru / Pierwszy krok)</div>
+          <div class="diff-box-title">${uiIco('scale')} Klucz rozstrzygający (Badanie z wyboru / Pierwszy krok)</div>
           <p style="margin:0;font-size:.9rem;line-height:1.5;font-weight:600;color:var(--ink)">${esc(cluster.keyRule)}</p>
         </div>
 
@@ -1163,19 +1446,22 @@ function viewConnections(parts, params) {
         <div style="margin-top:1rem">
           <div class="flab" style="margin-bottom:.5rem">Kierunki różnicowania i głębokie odnośniki do sekcji w atlasach</div>
           <div class="diff-branches-grid">
-            ${cluster.branches.map(b => `
+            ${cluster.branches.map(b => {
+              const hasAtlas = !!(b.atlas && atById[b.atlas]);
+              const href = hasAtlas ? `#/atlas/${b.atlas}/${b.sec}` : `#/pytania?tab=browse&mods=${b.mod}`;
+              return `
               <div class="diff-branch-item" style="border-left:4px solid ${gOf(b.mod).color}">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
                   <span class="chip m" style="color:${gOf(b.mod).color};font-size:.72rem">[${b.mod}] ${esc(SHORT[b.mod])}</span>
-                  <span class="muted" style="font-size:.75rem">Atlas: ${b.atlas}</span>
+                  <span class="muted" style="font-size:.75rem">${hasAtlas ? 'Atlas: ' + esc(ASHORT[b.atlas] || b.atlas) : 'Baza pytań'}</span>
                 </div>
                 <h4 style="font-size:.96rem;margin-bottom:.3rem">${esc(b.name)}</h4>
                 <p class="muted" style="font-size:.82rem;line-height:1.4;margin-bottom:.6rem">${esc(b.clue)}</p>
-                <a class="btn sec sm diff-link-btn" href="#/atlas/${b.atlas}/${b.sec}">
-                  📖 ${esc(b.linkText)} →
+                <a class="btn sec sm diff-link-btn" href="${href}">
+                  ${hasAtlas ? uiIco('book') : uiIco('search')} ${esc(b.linkText)} →
                 </a>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </div>
 
@@ -1187,14 +1473,14 @@ function viewConnections(parts, params) {
             </div>
             <div style="font-weight:700;font-size:.88rem;margin-bottom:.2rem">${esc(cluster.trap.title)}</div>
             <p class="muted" style="font-size:.82rem;margin:0;line-height:1.4">${esc(cluster.trap.desc)}</p>
-            <div style="margin-top:.4rem;font-size:.8rem;color:var(--ink);font-weight:600">💡 <b>Egzamin:</b> ${esc(cluster.examTip)}</div>
+            <div style="margin-top:.4rem;font-size:.8rem;color:var(--ink);font-weight:600">${uiIco('bulb')} <b>Egzamin:</b> ${esc(cluster.examTip)}</div>
           </div>
 
           <div class="diff-action-box">
             <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">Sprawdź się na styku modułów:</div>
             <p class="muted" style="font-size:.78rem;margin-bottom:.7rem">Baza zawiera <b>${commonCrossQs.length}</b> pytań łączących te tematy.</p>
             <a class="btn pri sm" href="#/trening?mods=${cluster.mods.join(',')}" style="width:100%;text-align:center;justify-content:center">
-              🎯 Ćwicz pytania ze styku (${commonCrossQs.length})
+              ${uiIco('target')} Ćwicz pytania ze styku (${commonCrossQs.length})
             </a>
           </div>
         </div>
@@ -1421,13 +1707,13 @@ function viewConnections(parts, params) {
         <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap" id="masteryFilterBar">
           <span style="font-weight:700;font-size:.82rem;color:var(--ink-2)">Filtruj powiązania:</span>
           <button class="tgl ${currentMasteryFilter === 'all' ? 'on' : ''}" data-mf="all" aria-pressed="${currentMasteryFilter === 'all'}">Wszystkie (${totalPairsWithQs})</button>
-          <button class="tgl tgl-err ${currentMasteryFilter === 'wrong' ? 'on' : ''}" data-mf="wrong" aria-pressed="${currentMasteryFilter === 'wrong'}">❌ Z błędami (${pairsWithWrong})</button>
+          <button class="tgl tgl-err ${currentMasteryFilter === 'wrong' ? 'on' : ''}" data-mf="wrong" aria-pressed="${currentMasteryFilter === 'wrong'}">${uiIco('x')} Z błędami (${pairsWithWrong})</button>
         </div>
         <div class="legend" style="margin:0;font-size:.78rem">
           <span><i class="dot" style="background:var(--green)"></i>Opanowane (≥70%)</span>
           <span><i class="dot" style="background:var(--amber)"></i>W trakcie (40-69%)</span>
           <span><i class="dot" style="background:var(--red)"></i>Błędy (&lt;40%)</span>
-          <span><i class="dot" style="background:rgba(12,122,133,0.35)"></i>Niećwiczone</span>
+          <span><i class="dot" style="background:rgba(138,40,76,0.35)"></i>Niećwiczone</span>
         </div>
       </div>
 
@@ -1440,12 +1726,12 @@ function viewConnections(parts, params) {
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.5rem">
           <div>
             <h2 style="margin:0">Pułapki kliniczne i egzaminacyjne</h2>
-            <p class="lead" style="margin:0">16 kluczowych pułapek z podziałem na błędy w sztuce (przyłóżkowe) i pułapki testowe.</p>
+            <p class="lead" style="margin:0">${TRAPS.length} kluczowych pułapek z podziałem na błędy w sztuce (przyłóżkowe) i pułapki testowe.</p>
           </div>
           <div class="pillrow" id="trapCatFilters" style="margin:0">
-            <button class="tgl ${currentTrapFilter === 'all' ? 'on' : ''}" data-tf="all" aria-pressed="${currentTrapFilter === 'all'}">Wszystkie (16)</button>
-            <button class="tgl ${currentTrapFilter === 'bedside' ? 'on' : ''}" data-tf="bedside" aria-pressed="${currentTrapFilter === 'bedside'}">🚨 Zagrożenie życia (${bedsideCount})</button>
-            <button class="tgl ${currentTrapFilter === 'test' ? 'on' : ''}" data-tf="test" aria-pressed="${currentTrapFilter === 'test'}">⚠️ Testowe (${testCount})</button>
+            <button class="tgl ${currentTrapFilter === 'all' ? 'on' : ''}" data-tf="all" aria-pressed="${currentTrapFilter === 'all'}">Wszystkie (${TRAPS.length})</button>
+            <button class="tgl ${currentTrapFilter === 'bedside' ? 'on' : ''}" data-tf="bedside" aria-pressed="${currentTrapFilter === 'bedside'}">${uiIco('alert')} Zagrożenie życia (${bedsideCount})</button>
+            <button class="tgl ${currentTrapFilter === 'test' ? 'on' : ''}" data-tf="test" aria-pressed="${currentTrapFilter === 'test'}">${uiIco('warn')} Testowe (${testCount})</button>
           </div>
         </div>
 
@@ -1477,7 +1763,7 @@ function viewConnections(parts, params) {
           <button class="trap" data-t="${idx}" style="border-left-color:${isBedside ? 'var(--red)' : 'var(--amber)'}">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.2rem">
               <span class="chip" style="font-size:.7rem;font-weight:800;border:0;color:${isBedside ? 'var(--red)' : 'var(--amber)'};background:${isBedside ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)'}">
-                ${isBedside ? '🚨 PRZYŁÓŻKOWA' : '⚠️ TESTOWA'}
+                ${isBedside ? uiIco('alert') + ' PRZYŁÓŻKOWA' : uiIco('warn') + ' TESTOWA'}
               </span>
               <div class="pillrow" style="margin:0">
                 ${t.mods.map(m => `<span class="chip m" style="color:${gOf(m).color};font-size:.7rem">[${m}]</span>`).join('')}
@@ -1587,7 +1873,7 @@ function viewConnections(parts, params) {
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
               <span style="font-weight:700;font-size:.84rem">Twój wynik ze styku:</span>
               <span class="chip" style="font-size:.72rem;background:${st.status === 'ok' ? 'var(--green-l)' : st.status === 'bad' ? 'var(--red-l)' : 'var(--amber-l)'};color:${st.status === 'ok' ? 'var(--green)' : st.status === 'bad' ? 'var(--red)' : 'var(--amber)'};border:0;font-weight:800">
-                ${st.status === 'ok' ? '🟢 Opanowane' : st.status === 'bad' ? '🔴 Wymaga powtórki' : '🟡 W trakcie'} (${Math.round(st.rate * 100)}%)
+                <i class="dot" style="background:${st.status === 'ok' ? 'var(--green)' : st.status === 'bad' ? 'var(--red)' : 'var(--amber)'}"></i> ${st.status === 'ok' ? 'Opanowane' : st.status === 'bad' ? 'Wymaga powtórki' : 'W trakcie'} (${Math.round(st.rate * 100)}%)
               </span>
             </div>
             <div class="muted" style="font-size:.8rem">Rozwiązane: <b>${st.att}</b> / ${st.total} (Poprawne: ${st.ok}, Błędne: ${st.wrong})</div>
@@ -1610,7 +1896,7 @@ function viewConnections(parts, params) {
         ${e.traps.map(t => `
           <div class="trap on" style="margin-top:.6rem;cursor:default;border-left-color:${t.category === 'bedside' ? 'var(--red)' : 'var(--amber)'}">
             <div style="font-size:.72rem;font-weight:800;color:${t.category === 'bedside' ? 'var(--red)' : 'var(--amber)'};margin-bottom:.2rem">
-              ${t.category === 'bedside' ? '🚨 ZAGROŻENIE ŻYCIA' : '⚠️ PUŁAPKA TESTOWA'}
+              ${t.category === 'bedside' ? uiIco('alert') + ' ZAGROŻENIE ŻYCIA' : uiIco('warn') + ' PUŁAPKA TESTOWA'}
             </div>
             <h4>${esc(t.t)}</h4>
             <span class="eq">${esc(t.eq)}</span>
@@ -1647,7 +1933,7 @@ function viewConnections(parts, params) {
       const isBedside = t.category === 'bedside';
       panel.innerHTML = `<div class="card">
         <div style="font-size:.72rem;font-weight:800;color:${isBedside ? 'var(--red)' : 'var(--amber)'};margin-bottom:.25rem">
-          ${isBedside ? '🚨 PRZYŁÓŻKOWE ZAGROŻENIE ŻYCIA' : '⚠️ PUŁAPKA TESTOWA (KLUCZ VS WYTYCZNE)'}
+          ${isBedside ? uiIco('alert') + ' PRZYŁÓŻKOWE ZAGROŻENIE ŻYCIA' : uiIco('warn') + ' PUŁAPKA TESTOWA (KLUCZ VS WYTYCZNE)'}
         </div>
         <h3 style="font-size:1.3rem;font-family:var(--font-display);margin-bottom:.4rem">${esc(t.t)}</h3>
         <p>${esc(t.eq)}</p>
@@ -1679,7 +1965,7 @@ function viewConnections(parts, params) {
             if (!w) return `<td style="background:var(--line-2)"></td>`;
 
             const st = edgeStats(r, c);
-            let cellBg = `rgba(12,122,133,${(.14 + .86 * w / mx).toFixed(2)})`;
+            let cellBg = `rgba(138,40,76,${(.14 + .86 * w / mx).toFixed(2)})`;
             let cellColor = w / mx > .5 ? 'var(--on-accent)' : 'var(--ink-2)';
 
             if (st.att > 0) {
@@ -1792,20 +2078,27 @@ const KG_DATA = (function () {
 })();
 
 function viewKnowledgeGraph(parts, params) {
+  const { nodes, edges, gapEdges, nodeById } = KG_DATA;
+  const kgAllCnt = nodes.length;
+  const kgModCnt = nodes.filter(n => n.type === 'mod').length;
+  const kgDisCnt = nodes.filter(n => n.type === 'dis').length;
+  const kgDiagCnt = nodes.filter(n => n.type === 'diag' || n.type === 'proc').length;
+  const kgGapCnt = (SEMANTIC_GAPS || []).length;
+
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
     
-    <h2>Globalna mapa pojęć i mostów myślowych</h2>
-    <p class="lead">Połączona sieć 12 modułów ginekologii i położnictwa, badań oraz procedur ratunkowych. Pulsujące linie przerywane wskazują luki semantyczne i pułapki egzaminacyjne PTGiP/LEK.</p>
+    <h1>Globalna mapa pojęć i mostów myślowych</h1>
+    <p class="lead">Połączona sieć ${MODS.length} modułów ginekologii i położnictwa, badań oraz procedur ratunkowych. Pulsujące linie przerywane wskazują luki semantyczne i pułapki egzaminacyjne PTGiP/LEK.</p>
 
     <div class="kg-wrap">
       <div class="kg-canvas-card">
         <div class="kg-toolbar">
           <div class="kg-filter-group" id="kgFilters">
-            <button class="kg-filter-btn active" data-filter="all">🔘 Wszystkie (34)</button>
-            <button class="kg-filter-btn" data-filter="mod">📚 Moduły (17)</button>
-            <button class="kg-filter-btn" data-filter="dis">🩺 Choroby (11)</button>
-            <button class="kg-filter-btn" data-filter="diag">🔬 Badania (6)</button>
-            <button class="kg-filter-btn" data-filter="gaps" style="border-color:var(--teal);color:var(--teal-d);font-weight:800">💡 Luki wiedzy (8)</button>
+            <button class="kg-filter-btn active" data-filter="all">${uiIco('layers')} Wszystkie (${kgAllCnt})</button>
+            <button class="kg-filter-btn" data-filter="mod">${uiIco('books')} Moduły (${kgModCnt})</button>
+            <button class="kg-filter-btn" data-filter="dis">${uiIco('steth')} Choroby (${kgDisCnt})</button>
+            <button class="kg-filter-btn" data-filter="diag">${uiIco('lab')} Badania i procedury (${kgDiagCnt})</button>
+            <button class="kg-filter-btn" data-filter="gaps" style="border-color:var(--teal);color:var(--teal-d);font-weight:800">${uiIco('bulb')} Luki wiedzy (${kgGapCnt})</button>
           </div>
           <div style="display:flex;align-items:center;gap:.4rem">
             <input type="search" id="kgSearch" placeholder="Szukaj encji..." style="border:1.5px solid var(--line);border-radius:999px;padding:.28rem .75rem;font-size:.8rem;background:var(--surface);color:var(--ink);outline:none">
@@ -1820,7 +2113,7 @@ function viewKnowledgeGraph(parts, params) {
 
   <section class="blk"><div class="wrap">
     <div class="eyebrow">Analiza pułapek klinicznych</div>
-    <h2>💡 8 Kluczowych luk semantycznych (Mosty myślowe)</h2>
+    <h2>${uiIco('bulb')} ${kgGapCnt} Kluczowych luk semantycznych (Mosty myślowe)</h2>
     <p class="lead">Kliknij dowolną kartę, aby podświetlić most wiedzy na grafie i otworzyć dedykowaną analizę patomechanizmu oraz pułapki egzaminacyjnej.</p>
     <div class="agrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr))" id="kgGapsGrid">
       ${(SEMANTIC_GAPS || []).map((g, idx) => `
@@ -1841,7 +2134,6 @@ function viewKnowledgeGraph(parts, params) {
 
   const svgHost = $('#kgSvgHost');
   const inspector = $('#kgInspector');
-  const { nodes, edges, gapEdges, nodeById } = KG_DATA;
   const gapById = Object.fromEntries((SEMANTIC_GAPS || []).map(g => [g.id, g]));
 
   // Renderowanie SVG
@@ -1901,7 +2193,7 @@ function viewKnowledgeGraph(parts, params) {
       } else if (n.type === 'dis') {
         return `<g class="kg-node" data-nid="${n.id}" data-type="dis" tabindex="0" role="button" aria-label="Choroba: ${esc(n.n)}" style="${displayStyle}">
           <rect x="${n.x - 22}" y="${n.y - 18}" width="44" height="36" rx="10" fill="var(--surface)" stroke="${grp.color}" stroke-width="2.2" />
-          <text x="${n.x}" y="${n.y + 1}" font-size="16px" text-anchor="middle" dominant-baseline="central" pointer-events="none">${n.icon || '🩺'}</text>
+          <text x="${n.x}" y="${n.y + 1}" font-size="11px" font-weight="800" fill="var(--ink)" text-anchor="middle" dominant-baseline="central" pointer-events="none">${esc(n.icon || 'OB')}</text>
           <text x="${n.x}" y="${n.y + 32}" font-size="10.5px" font-weight="700" fill="var(--ink)" text-anchor="middle" pointer-events="none">${esc(n.n.length > 18 ? n.n.slice(0, 16) + '…' : n.n)}</text>
         </g>`;
       } else {
@@ -2088,7 +2380,7 @@ function viewKnowledgeGraph(parts, params) {
             ${connectedGaps.map(g => `
               <button class="link-item" data-showgap="${g.id}" type="button">
                 <div class="link-item-header">
-                  <span class="link-item-title" style="color:var(--teal)">💡 ${esc(g.title)}</span>
+                  <span class="link-item-title" style="color:var(--teal)">${uiIco('bulb')} ${esc(g.title)}</span>
                 </div>
                 <div class="link-item-concept">${esc(g.clinicalReason.slice(0, 100))}…</div>
               </button>
@@ -2123,7 +2415,7 @@ function viewKnowledgeGraph(parts, params) {
 
     inspector.innerHTML = `<div class="card" style="border-top:4px solid var(--teal)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.4rem">
-        <span class="kg-gap-badge">💡 Luka semantyczna</span>
+        <span class="kg-gap-badge">${uiIco('bulb')} Luka semantyczna</span>
         <div class="pillrow" style="margin:0">
           ${gap.mods.map(m => `<span class="chip m" style="color:${gOf(m).color};font-size:.72rem">[${m}]</span>`).join('')}
         </div>
@@ -2139,7 +2431,7 @@ function viewKnowledgeGraph(parts, params) {
       </div>
 
       <div class="gap-exam-warning">
-        <b>⚠️ Pułapka egzaminacyjna (PES/LEK):</b>
+        <b>${uiIco('warn')} Pułapka egzaminacyjna (PES/LEK):</b>
         <span>${esc(gap.examTrap)}</span>
       </div>
 
@@ -2205,25 +2497,38 @@ function viewKnowledgeGraph(parts, params) {
 const F = { q: '', at: new Set(), mods: new Set(), banks: new Set(), all: false, conf: new Set(), gap: false, bm: false, wrong: false, hit: false, hasKey: false, hasWhy: false, searchWhy: false, quiz: true, advOpen: false, open: 'all', limit: 30, tab: getQStats().banks.zaklad ? 'zaklad' : 'browse', addMode: 'single' };
 let parsedImportStash = [];
 
+function syncQuestionTabs() {
+  const zakladCount = getQStats().banks.zaklad || 0;
+  const bZak = $('#qTabs button[data-t="zaklad"]');
+  const bBrw = $('#qTabs button[data-t="browse"]');
+  const bExp = $('#qTabs button[data-t="export"]');
+  if (bZak) bZak.innerHTML = `${uiIco('bank')} Pula Zakładowa (${zakladCount})`;
+  if (bBrw) bBrw.innerHTML = `${uiIco('search')} Wyszukiwarka pytań (${Q.length})`;
+  if (bExp) bExp.innerHTML = `${uiIco('upload')} Eksport dodanych (${CUSTOM_Q.length})`;
+  const h1 = main.querySelector('h1');
+  if (h1 && current.name === 'pytania') h1.textContent = `${Q.length} zadań · Pula zakładowa, LEK, PES, PTGiP/FIGO`;
+}
+
 function viewQuestions(parts, params) {
   if (Object.keys(params).length) {
-    F.q = params.q || ''; F.at = new Set((params.at || '').split(',').filter(Boolean)); F.mods = new Set((params.mods || '').split(',').filter(Boolean));
+    F.q = params.q || ''; F.at = new Set((params.at || '').split(',').filter(Boolean)); F.mods = new Set((params.mods || params.mod || '').split(',').filter(Boolean));
     F.banks = new Set((params.bank || '').split(',').filter(Boolean));
     F.all = !!params.all; F.conf = new Set((params.conf || '').split(',').filter(Boolean)); F.gap = !!params.gap; F.bm = !!params.bm; F.wrong = !!params.wrong;
     F.hit = !!params.hit; F.hasKey = !!params.hasKey; F.hasWhy = !!params.hasWhy; F.searchWhy = !!params.searchWhy; F.limit = 30;
     if (params.tab) F.tab = params.tab;
+    else if (F.mods.size || F.at.size || F.q || F.gap || F.wrong || F.bm) F.tab = 'browse';
   }
 
   const zakladCount = getQStats().banks.zaklad || 0;
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
-    <div class="eyebrow">Baza pytań i banki zewnętrzne</div><h2>${Q.length} zadań · Pula zakładowa, LEK, PES, MP</h2>
+    <div class="eyebrow">Baza pytań i banki zewnętrzne</div><h1>${Q.length} zadań · Pula zakładowa, LEK, PES, PTGiP/FIGO</h1>
     <p class="lead">Przeglądaj pytania według banków, sprawdzaj klucze i omówienia lub twórz własne zadania testowe i importuj całe zestawy.</p>
 
     <div class="qtabs" id="qTabs">
-      <button class="qtab zaklad-tab${F.tab === 'zaklad' ? ' on' : ''}" data-t="zaklad">🏛️ Pula Zakładowa (${zakladCount})</button>
-      <button class="qtab${F.tab === 'browse' ? ' on' : ''}" data-t="browse">🔍 Wyszukiwarka pytań (${Q.length})</button>
-      <button class="qtab${F.tab === 'add' ? ' on' : ''}" data-t="add">➕ Dodaj nowe pytanie / Import</button>
-      <button class="qtab${F.tab === 'export' ? ' on' : ''}" data-t="export">📤 Eksport dodanych (${CUSTOM_Q.length})</button>
+      <button class="qtab zaklad-tab${F.tab === 'zaklad' ? ' on' : ''}" data-t="zaklad">${uiIco('bank')} Pula Zakładowa (${zakladCount})</button>
+      <button class="qtab${F.tab === 'browse' ? ' on' : ''}" data-t="browse">${uiIco('search')} Wyszukiwarka pytań (${Q.length})</button>
+      <button class="qtab${F.tab === 'add' ? ' on' : ''}" data-t="add">${uiIco('plus')} Dodaj nowe pytanie / Import</button>
+      <button class="qtab${F.tab === 'export' ? ' on' : ''}" data-t="export">${uiIco('upload')} Eksport dodanych (${CUSTOM_Q.length})</button>
     </div>
 
     <div id="qTabContent"></div>
@@ -2263,8 +2568,8 @@ function renderZakladTab(container) {
       <h3 style="font-size:1.3rem;margin:.2rem 0 .5rem">Pula zakładowa jest obecnie wyłączona</h3>
       <p class="muted" style="margin-bottom:1rem">Plik zewnętrzny (<code>js/questions_zaklad.js</code>) został odpięty od startowego ładowania i zachowany jako kopia zapasowa. Wszystkie ${Q.length} aktywnych pytań klinicznych znajdziesz w wyszukiwarce oraz trybie treningu.</p>
       <div style="display:flex;flex-wrap:wrap;gap:.6rem">
-        <button class="btn pri sm" id="zdGoBrowse">🔍 Przeglądaj aktywną bazę (${Q.length}) →</button>
-        <a class="btn sec sm" href="#/trening">⚡ Uruchom trening →</a>
+        <button class="btn pri sm" id="zdGoBrowse">${uiIco('search')} Przeglądaj aktywną bazę (${Q.length}) →</button>
+        <a class="btn sec sm" href="#/trening">${uiIco('zap')} Uruchom trening →</a>
       </div>
     </div>`;
     $('#zdGoBrowse').onclick = () => {
@@ -2275,18 +2580,13 @@ function renderZakladTab(container) {
     return;
   }
 
-  const s4Qs = [];
-  let att = 0, ok = 0, wrong = 0, hitsCount = 0, gapCountLocal = 0, openCount = 0, s4Ok = 0;
+  let att = 0, ok = 0, wrong = 0, hitsCount = 0, gapCountLocal = 0, openCount = 0;
   const modCounts = Object.create(null);
   for (let i = 0; i < Q.length; i++) {
     const q = Q[i];
     if (q.bank !== 'zaklad') continue;
     const a = S.ans[q.id];
     if (a) { att++; if (a.last) ok++; else wrong++; }
-    if (false) {
-      s4Qs.push(q);
-      if (a && a.last) s4Ok++;
-    }
     if (q.reps >= 2) hitsCount++;
     if (q.gap) gapCountLocal++;
     if (q.type === 'open') openCount++;
@@ -2335,10 +2635,10 @@ function renderZakladTab(container) {
       </div>
     </div>
 
-    <!-- Szybki skok po numerze pytania Q... -->
+    <!-- Szybki skok po ID / numerze pytania -->
     <div class="zd-jump-bar">
-      <span style="font-weight:800;font-size:.9rem;white-space:nowrap">🎯 Szybki skok:</span>
-      <input type="text" inputmode="search" enterkeyhint="search" class="zd-jump-input" id="zdJumpInput" placeholder="Wpisz nr pytania (np. 12, gp0005, nagle-ob-q1)…" aria-label="Skocz do pytania">
+      <span style="font-weight:800;font-size:.9rem;white-space:nowrap">${uiIco('target')} Szybki skok:</span>
+      <input type="text" inputmode="search" enterkeyhint="search" class="zd-jump-input" id="zdJumpInput" placeholder="Wpisz ID lub nr pytania (np. gp0005, nagle-ob-q1 lub 5)…" aria-label="Skocz do pytania">
       <button class="btn sec sm" id="zdJumpBtn" style="font-weight:700">Otwórz pytanie →</button>
     </div>
 
@@ -2347,44 +2647,33 @@ function renderZakladTab(container) {
     <p class="muted" style="margin-bottom:1rem">Wybierz profil nauki dopasowany do Twojego etapu przygotowań do kolokwium lub egzaminu.</p>
 
     <div class="zd-modes-grid">
-      ${s4Qs.length ? `
-      <div class="zd-mode-card s4">
-        <span class="zd-mode-title">📘 Baza S4 Pediatria 2026_27 <span class="zd-count">${s4Qs.length} pytań</span></span>
-        <span class="zd-mode-desc">Komplet zadań pochodzących bezpośrednio z pliku <code>Baza S4 Pediatria 2026_27</code> (opanowane: ${s4Ok}/${s4Qs.length}).</span>
-        <div class="zd-mode-acts">
-          <button type="button" class="btn pri sm" style="background:var(--blue);border-color:var(--blue)" data-mode="s4">Trenuj zestaw →</button>
-          <button type="button" class="btn sec sm" data-browse-src="Baza-S4-Pediatria-2026_27">Przeglądaj (${s4Qs.length})</button>
-        </div>
-      </div>
-      ` : ''}
-
       <button type="button" class="zd-mode-card hit" data-mode="hits">
-        <span class="zd-mode-title">🔥 Hity Zakładowe <span class="zd-count">${hitsCount} pytań</span></span>
-        <span class="zd-mode-desc">Pytania powtórzone w co najmniej dwóch niezależnych rocznikach/zaliczeniach (2014–2026). Absolutny priorytet powtórkowy!</span>
+        <span class="zd-mode-title">${uiIco('flame')} Hity Zakładowe <span class="zd-count">${hitsCount} pytań</span></span>
+        <span class="zd-mode-desc">Pytania powtórzone w co najmniej dwóch niezależnych rocznikach/zaliczeniach. Absolutny priorytet powtórkowy!</span>
         <span class="btn pri sm hit" aria-hidden="true">Trenuj Hity Zakładowe →</span>
       </button>
 
       <button type="button" class="zd-mode-card gap" data-mode="gap">
-        <span class="zd-mode-title">⚠️ Pułapki i Rozbieżności <span class="zd-count">${gapCountLocal} pytań</span></span>
-        <span class="zd-mode-desc">Zadania, w których klucz zakładowy różni się od współczesnych wytycznych. Dwutorowy panel: „Pod zaliczenie” vs „Klinicznie”.</span>
+        <span class="zd-mode-title">${uiIco('warn')} Pułapki i Rozbieżności <span class="zd-count">${gapCountLocal} pytań</span></span>
+        <span class="zd-mode-desc">Zadania, w których klucz zakładowy różni się od współczesnych wytycznych PTGiP/FIGO. Dwutorowy panel: „Pod zaliczenie” vs „Klinicznie”.</span>
         <span class="btn pri sm" style="background:var(--amber-d);border-color:var(--amber-d)" aria-hidden="true">Ćwicz Rozbieżności →</span>
       </button>
 
       <button type="button" class="zd-mode-card marathon" data-mode="marathon">
-        <span class="zd-mode-title">⚡ Maraton Zakładowy <span class="zd-count">25 pytań</span></span>
+        <span class="zd-mode-title">${uiIco('zap')} Maraton Zakładowy <span class="zd-count">25 pytań</span></span>
         <span class="zd-mode-desc">Losowa sesja 25 pytań z całej puli zakładowej w trybie nauki – natychmiastowe wyjaśnienie merytoryczne i analiza dystraktorów.</span>
         <span class="btn pri sm" aria-hidden="true">Rozpocznij Maraton →</span>
       </button>
 
       <button type="button" class="zd-mode-card flash" data-mode="flash">
-        <span class="zd-mode-title">🃏 Fiszki Kliniczne <span class="zd-count">${openCount} pytań</span></span>
+        <span class="zd-mode-title">${uiIco('cards')} Fiszki Kliniczne <span class="zd-count">${openCount} pytań</span></span>
         <span class="zd-mode-desc">Pytania otwarte i rekonstrukcyjne – wymusza aktywne przypominanie (retrieval practice) przed odsłonięciem klucza i omówienia.</span>
         <span class="btn pri sm" aria-hidden="true">Uruchom Fiszki →</span>
       </button>
 
       ${wrong > 0 ? `
       <button type="button" class="zd-mode-card wrong" data-mode="wrong">
-        <span class="zd-mode-title">❌ Koryguj Błędy <span class="zd-count" style="color:var(--red)">${wrong} do powtórki</span></span>
+        <span class="zd-mode-title">${uiIco('x')} Koryguj Błędy <span class="zd-count" style="color:var(--red)">${wrong} do powtórki</span></span>
         <span class="zd-mode-desc">Sesja powtórkowa skupiona wyłącznie na zadaniach zakładowych, w których ostatnia odpowiedź była błędna.</span>
         <span class="btn pri sm" style="background:var(--red);border-color:var(--red)" aria-hidden="true">Powtórz błędy →</span>
       </button>
@@ -2409,29 +2698,28 @@ function renderZakladTab(container) {
     </div>
   `;
 
-  // Obsługa skoku po numerze pytania
+  // Obsługa skoku po ID lub numerze pytania
   const doJump = () => {
     const val = $('#zdJumpInput').value.trim();
     if (!val) return;
-    const m = val.match(/^#?q?(\d{1,4})$/i);
-    if (!m) {
-      toast('Wpisz poprawny numer pytania (np. 142, Q0500)');
-      return;
-    }
-    const targetId = 'q' + m[1].padStart(4, '0');
-    const found = qById[targetId];
+    const found = typeof matchQuestionJump === 'function'
+      ? matchQuestionJump(val, Q)
+      : (qById[val] || qById[val.replace(/^#/, '').toLowerCase()] || null);
     if (!found) {
-      toast(`Nie znaleziono pytania ${targetId.toUpperCase()} w bazie`);
+      toast('Nie znaleziono pytania — wpisz np. gp0005, nagle-ob-q1 lub 5');
       return;
     }
     F.tab = 'browse';
-    F.q = targetId;
+    F.q = found.id;
+    F.at.clear(); F.mods.clear(); F.banks.clear(); F.conf.clear();
+    F.all = false; F.gap = false; F.bm = false; F.wrong = false;
+    F.hit = false; F.hasKey = false; F.hasWhy = false;
     F.limit = 30;
     $$('#qTabs .qtab').forEach(x => x.classList.toggle('on', x.dataset.t === 'browse'));
     renderTabContent();
-    const card = $(`#qlist details.qc[data-q="${targetId}"]`);
+    const card = $$('#qlist details.qc').find(el => el.dataset.q === found.id);
     if (card) card.scrollIntoView({ block: 'nearest' });
-    toast(`Otwarto pytanie ${targetId.toUpperCase()}`);
+    toast(`Otwarto pytanie ${found.id}`);
   };
 
   $('#zdJumpBtn').onclick = doJump;
@@ -2441,13 +2729,6 @@ function renderZakladTab(container) {
   container.querySelectorAll('[data-mode]').forEach(card => {
     card.onclick = () => {
       const mode = card.dataset.mode;
-      if (mode === 's4') {
-        C.mode = 'learn';
-        pendingRetryIds = s4Qs.map(q => q.id);
-        SESSION = null;
-        location.hash = '#/trening';
-        return;
-      }
       C.at = new Set(); C.mods = new Set(); C.conf = new Set();
       C.banks = new Set(['zaklad']);
       C.hitsOnly = mode === 'hits';
@@ -2462,46 +2743,37 @@ function renderZakladTab(container) {
       location.hash = '#/trening';
     };
   });
-  container.querySelectorAll('[data-browse-src]').forEach(btn => {
-    btn.onclick = () => {
-      F.tab = 'browse';
-      F.q = btn.dataset.browseSrc;
-      F.at.clear(); F.mods.clear(); F.banks = new Set(['zaklad']);
-      F.conf.clear(); F.gap = false; F.bm = false; F.wrong = false;
-      F.hit = false; F.hasKey = false; F.hasWhy = false;
-      F.limit = 50;
-      $$('#qTabs .qtab').forEach(x => x.classList.toggle('on', x.dataset.t === 'browse'));
-      renderTabContent();
-    };
-  });
 }
 
 function renderBrowseTab(container) {
   const stats = getQStats();
-  const countAdv = () => F.conf.size + (F.all ? 1 : 0) + (F.hasKey ? 1 : 0) + (F.hasWhy ? 1 : 0) + (F.searchWhy ? 1 : 0);
+  const countAdv = () => F.mods.size + F.at.size + F.conf.size + (F.all ? 1 : 0) + (F.hasKey ? 1 : 0) + (F.hasWhy ? 1 : 0) + (F.searchWhy ? 1 : 0);
+  const formatAdvLabel = c => c
+    ? `Moduły i filtry (${c} ${c === 1 ? 'aktywny' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14)) ? 'aktywne' : 'aktywnych'})`
+    : `Moduły (${MODS.length}) i filtry szczegółowe`;
   const advCnt = countAdv();
   container.innerHTML = `
     <div class="tool">
-      <input class="field" id="fq" type="search" inputmode="search" enterkeyhint="search" placeholder="Szukaj po ID (np. q0042), w treści pytań, odpowiedziach lub omówieniach…" value="${esc(F.q)}" aria-label="Szukaj w pytaniach">
+      <input class="field" id="fq" type="search" inputmode="search" enterkeyhint="search" placeholder="Szukaj po ID (np. gp0005, nagle-ob-q1), w treści pytań, odpowiedziach lub omówieniach…" value="${esc(F.q)}" aria-label="Szukaj w pytaniach">
       <div class="frow"><span class="flab">Bank</span><div class="pillrow" id="fBank">${Object.keys(BANKS).map(b => `<button class="tgl" data-v="${b}" aria-pressed="${F.banks.has(b)}">${BANKS[b].icon} ${BANKS[b].short} (${stats.banks[b] || 0})</button>`).join('')}</div></div>
-      <div class="frow"><span class="flab">Atlas</span><div class="pillrow" id="fAt">${ATLASES.map(a => `<button class="tgl" data-v="${a.id}" aria-pressed="${F.at.has(a.id)}">${a.tag} ${esc(ASHORT[a.id])}</button>`).join('')}</div></div>
-      <div class="frow"><span class="flab">Moduł</span><div class="pillrow" id="fMod">${MODS.filter(m => stats.modsHit.has(m.id)).map(m => `<button class="tgl g" style="--gc:${gOf(m.id).color}" data-v="${m.id}" aria-pressed="${F.mods.has(m.id)}" title="Moduł ${m.id}: ${esc(m.n)}">[${m.id}] ${esc(SHORT[m.id] || m.n)}</button>`).join('')}</div></div>
       <div class="frow" id="fFlag"><span class="flab">Tylko</span><div class="pillrow">
-        <button class="tgl" data-f="hit" aria-pressed="${F.hit}">🔥 hity bazy (≥2)</button>
-        <button class="tgl gap-tgl" data-f="gap" aria-pressed="${F.gap}">⚠️ klucz ≠ wytyczne (${stats.gap})</button>
+        <button class="tgl" data-f="hit" aria-pressed="${F.hit}">${uiIco('flame')} hity bazy (≥2)</button>
+        <button class="tgl gap-tgl" data-f="gap" aria-pressed="${F.gap}">${uiIco('warn')} klucz ≠ wytyczne (${stats.gap})</button>
         <button class="tgl" data-f="wrong" aria-pressed="${F.wrong}">moje błędne</button>
         <button class="tgl" data-f="bm" aria-pressed="${F.bm}">zakładki</button>
-        <button class="tgl" id="fQuiz" aria-pressed="${F.quiz}" title="Ukryj zaznaczony klucz i rozwiązuj pytania klikając odpowiedzi bezpośrednio w kartach">📝 Rozwiązuj w kartach</button>
+        <button class="tgl" id="fQuiz" aria-pressed="${F.quiz}" title="Ukryj zaznaczony klucz i rozwiązuj pytania klikając odpowiedzi bezpośrednio w kartach">${uiIco('edit')} Rozwiązuj w kartach</button>
       </div>
-        <span style="flex:1"></span><span class="muted" id="fCount" style="font-weight:700"></span><button class="btn pri sm" id="fTrain">⚡ Ćwicz (0)</button><button class="btn sec sm" id="fClr">Wyczyść</button></div>
-      <details class="adv-filters" id="fAdv"${F.advOpen || advCnt > 0 ? ' open' : ''}>
-        <summary><span id="fAdvLabel">Filtry zaawansowane: pewność klucza i flagi techniczne${advCnt ? ` (${advCnt} aktywne)` : ''}</span></summary>
+        <span style="flex:1"></span><span class="muted" id="fCount" style="font-weight:700"></span><button class="btn pri sm" id="fTrain">${uiIco('zap')} Ćwicz (0)</button><button class="btn sec sm" id="fClr">Wyczyść</button></div>
+      <details class="adv-filters" id="fAdv"${F.advOpen ? ' open' : ''}>
+        <summary><span id="fAdvLabel">${formatAdvLabel(advCnt)}</span></summary>
         <div class="adv-body">
+          <div class="frow"><span class="flab">Moduł</span><div class="pillrow" id="fMod">${MODS.filter(m => stats.modsHit.has(m.id)).map(m => `<button class="tgl g" style="--gc:${gOf(m.id).color}" data-v="${m.id}" aria-pressed="${F.mods.has(m.id)}" title="Moduł ${m.id}: ${esc(m.n)}">[${m.id}] ${esc(SHORT[m.id] || m.n)}</button>`).join('')}</div></div>
+          <div class="frow"><span class="flab">Atlas</span><div class="pillrow" id="fAt">${ATLASES.map(a => `<button class="tgl" data-v="${a.id}" aria-pressed="${F.at.has(a.id)}">${a.tag} ${esc(ASHORT[a.id])}</button>`).join('')}</div></div>
           <div class="frow"><span class="flab">Klucz</span><div class="pillrow" id="fConf">${Object.keys(CONF).filter(k => stats.confHit.has(k)).map(k => `<button class="tgl" data-v="${k}" aria-pressed="${F.conf.has(k)}">${CONF[k].n}</button>`).join('')}</div></div>
           <div class="frow"><span class="flab">Flagi</span><div class="pillrow" id="fAdvFlags">
             <button class="tgl" data-f="hasKey" aria-pressed="${F.hasKey}">z oficjalnym kluczem</button>
             <button class="tgl" data-f="hasWhy" aria-pressed="${F.hasWhy}">z omówieniem</button>
-            <button class="tgl" data-f="searchWhy" aria-pressed="${F.searchWhy}" title="Przeszukuj również pełne teksty wyjaśnień i analizy dystraktorów">🔍 szukaj też w omówieniach</button>
+            <button class="tgl" data-f="searchWhy" aria-pressed="${F.searchWhy}" title="Przeszukuj również pełne teksty wyjaśnień i analizy dystraktorów">${uiIco('search')} szukaj też w omówieniach</button>
             <button class="tgl" id="fAll" aria-pressed="${F.all}" title="Wymagaj wszystkich wybranych modułów jednocześnie">wszystkie wybrane moduły naraz</button>
           </div></div>
         </div>
@@ -2518,17 +2790,23 @@ function renderBrowseTab(container) {
   if (advDet) advDet.addEventListener('toggle', () => { F.advOpen = advDet.open; });
   const syncAdvLabel = () => {
     if (!advLab) return;
-    const c = countAdv();
-    advLab.textContent = `Filtry zaawansowane: pewność klucza i flagi techniczne${c ? ` (${c} aktywne)` : ''}`;
+    advLab.textContent = formatAdvLabel(countAdv());
   };
   let lastFiltered = [];
   let fqTimer = null;
   let lastTargetQId = null;
   function filtered() {
     const rawQuery = (F.q || '').trim();
-    const numMatch = rawQuery.match(/^#?q?(\d{1,4})$/i);
-    const exactId = rawQuery.replace(/^#/, '');
-    const targetQId = numMatch ? 'q' + numMatch[1].padStart(4, '0') : (qById[exactId] ? exactId : (qById[exactId.toLowerCase()] ? exactId.toLowerCase() : null));
+    const cleanId = rawQuery.replace(/^#+/, '');
+    let targetQId = null;
+    if (cleanId && !/\s/.test(cleanId)) {
+      if (qById[cleanId]) targetQId = cleanId;
+      else if (qById[cleanId.toLowerCase()]) targetQId = cleanId.toLowerCase();
+      else if (/^(?:gp|q)?\d{1,4}$/i.test(cleanId) && typeof matchQuestionJump === 'function') {
+        const hit = matchQuestionJump(cleanId, Q);
+        if (hit) targetQId = hit.id;
+      }
+    }
     lastTargetQId = targetQId;
     const toks = norm(F.q).split(/\s+/).filter(Boolean);
     const ms = F.mods.size ? [...F.mods] : null;
@@ -2570,7 +2848,7 @@ function renderBrowseTab(container) {
     }
     $('#fCount').textContent = r.length + ' z ' + Q.length;
     if (trainBtn) {
-      trainBtn.textContent = `⚡ Ćwicz (${r.length})`;
+      trainBtn.innerHTML = `${uiIco('zap')} Ćwicz (${r.length})`;
       trainBtn.disabled = !r.length;
     }
     const slice = r.slice(0, F.limit);
@@ -2613,8 +2891,7 @@ function renderBrowseTab(container) {
   $('#fClr').addEventListener('click', () => { clearTimeout(fqTimer); Object.assign(F, { q: '', at: new Set(), mods: new Set(), banks: new Set(), all: false, conf: new Set(), gap: false, bm: false, wrong: false, hit: false, hasKey: false, hasWhy: false, searchWhy: false, quiz: true, advOpen: false, limit: 30 }); renderBrowseTab(container); });
   onBmMutate = () => {
     draw();
-    $('#qTabs button[data-t="export"]').textContent = `📤 Eksport dodanych (${CUSTOM_Q.length})`;
-    $('#qTabs button[data-t="browse"]').textContent = `🔍 Wyszukiwarka pytań (${Q.length})`;
+    syncQuestionTabs();
   };
   draw();
 }
@@ -2721,8 +2998,7 @@ function renderAddTab(container) {
       saveCustomQ();
       toast('Pytanie zostało pomyślnie dodane!');
       $('#sqForm').reset();
-      $('#qTabs button[data-t="export"]').textContent = `📤 Eksport dodanych (${CUSTOM_Q.length})`;
-      $('#qTabs button[data-t="browse"]').textContent = `🔍 Przeglądaj pytania (${Q.length})`;
+      syncQuestionTabs();
     };
   } else {
     box.innerHTML = `
@@ -2747,14 +3023,14 @@ function renderAddTab(container) {
         <div class="qform-row">
           <label for="mqText">Treść pytań do importu</label>
           <textarea class="qform-textarea" id="mqText" style="min-height:160px" placeholder="Przykład formatu tekstowego:
-1. Które ze stwierdzeń dotyczących zapalenia płuc u niemowląt jest fałszywe?
-A. Najczęstszą etiologią są wirusy
-B. Badaniem pierwszego wyboru jest TK klatki piersiowej
-C. Duszność i tachypnoe to wiodące objawy
-D. Antybiotykiem pierwszego rzutu jest amoksycylina
-E. Wskazaniem do hospitalizacji jest saturacja <92%
+1. Lekiem pierwszego rzutu w napadzie rzucawki jest:
+A. Diazepam 10 mg i.v.
+B. Siarczan magnezu (MgSO4) 4–6 g i.v. w bolusie, następnie 1–2 g/h
+C. Fenytoina 15 mg/kg m.c. i.v.
+D. Labetalol 20 mg i.v.
+E. Kwas walproinowy i.v.
 Klucz: B
-Omówienie: TK nie jest badaniem rutynowym, wystarczy badanie kliniczne i ew. RTG."></textarea>
+Omówienie: Siarczan magnezu jest jedynym lekiem I rzutu w leczeniu i profilaktyce drgawek rzucawkowych wg PTGiP/FIGO."></textarea>
         </div>
 
         <div class="qform-acts">
@@ -2803,8 +3079,7 @@ Omówienie: TK nie jest badaniem rutynowym, wystarczy badanie kliniczne i ew. RT
       $('#mqText').value = '';
       $('#mqPreview').innerHTML = '';
       $('#btnCommitImport').style.display = 'none';
-      $('#qTabs button[data-t="export"]').textContent = `📤 Eksport dodanych (${CUSTOM_Q.length})`;
-      $('#qTabs button[data-t="browse"]').textContent = `🔍 Przeglądaj pytania (${Q.length})`;
+      syncQuestionTabs();
     };
   }
 }
@@ -2851,15 +3126,14 @@ function renderExportTab(container) {
 
   const btnClear = $('#btnClearCustom');
   if (btnClear) {
-    btnClear.onclick = () => {
-      if (confirm('Czy na pewno chcesz usunąć wszystkie pytania dodane w tej przeglądarce? Tej operacji nie można cofnąć.')) {
-        CUSTOM_Q = [];
-        saveCustomQ();
-        toast('Wyczyszczono dodane pytania');
-        $('#qTabs button[data-t="export"]').textContent = `📤 Eksport dodanych (0)`;
-        $('#qTabs button[data-t="browse"]').textContent = `🔍 Przeglądaj pytania (${Q.length})`;
-        renderExportTab(container);
-      }
+    btnClear.onclick = async () => {
+      const ok = await hubConfirm('Usunąć wszystkie dodane pytania?', 'Czy na pewno chcesz usunąć wszystkie pytania dodane w tej przeglądarce? Tej operacji nie można cofnąć.', 'Usuń wszystkie', { danger: true });
+      if (!ok) return;
+      CUSTOM_Q = [];
+      saveCustomQ();
+      toast('Wyczyszczono dodane pytania');
+      syncQuestionTabs();
+      renderExportTab(container);
     };
   }
 }
@@ -3043,6 +3317,7 @@ function initNotesDrawer() {
   const btn = $('#btnQuickNotes');
   const drawer = $('#notesDrawer');
   const close = $('#drawerClose');
+  const openFull = $('#drawerOpenFull');
   const input = $('#drawerInput');
   const preview = $('#drawerPreview');
   const modeBtn = $('#drawerToggleMode');
@@ -3060,18 +3335,29 @@ function initNotesDrawer() {
     if (preview) preview.innerHTML = parseMarkdown(input.value) || '<p class="muted">Brak tekstu w brudnopisie...</p>';
   };
 
-  btn.onclick = () => {
-    const hidden = drawer.hasAttribute('hidden');
-    if (hidden) {
+  const setDrawerOpen = (open, restoreFocus = false) => {
+    if (open) {
       drawer.removeAttribute('hidden');
+      btn.setAttribute('aria-expanded', 'true');
       input.focus();
       updatePreview();
     } else {
       drawer.setAttribute('hidden', '');
+      btn.setAttribute('aria-expanded', 'false');
+      if (restoreFocus) btn.focus();
     }
   };
 
-  if (close) close.onclick = () => drawer.setAttribute('hidden', '');
+  btn.onclick = () => setDrawerOpen(drawer.hasAttribute('hidden'), false);
+  if (close) close.onclick = () => setDrawerOpen(false, true);
+  if (openFull) openFull.addEventListener('click', () => setDrawerOpen(false, false));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !drawer.hasAttribute('hidden') && !$('#confirmModal')?.open) {
+      e.preventDefault();
+      setDrawerOpen(false, true);
+    }
+  });
 
   let saveT;
   input.addEventListener('input', () => {
@@ -3079,7 +3365,7 @@ function initNotesDrawer() {
     if (status) status.textContent = 'Zapisywanie...';
     saveT = setTimeout(() => {
       const ok = safeStorageSet(SCRATCH_KEY, input.value);
-      if (status) status.textContent = ok ? 'Zapisano ✓' : '⚠️ Brak miejsca';
+      if (status) status.textContent = ok ? 'Zapisano ✓' : 'Brak miejsca';
       updatePreview();
     }, 300);
   });
@@ -3093,11 +3379,12 @@ function initNotesDrawer() {
       e.preventDefault();
       insertMarkdownAt(input, 'i');
       updatePreview();
-    } else if (e.key === 'Tab') {
+    } else if ((e.ctrlKey || e.metaKey) && e.key === ']') {
       e.preventDefault();
       const start = input.selectionStart, end = input.selectionEnd;
       input.value = input.value.slice(0, start) + '  ' + input.value.slice(end);
       input.selectionStart = input.selectionEnd = start + 2;
+      updatePreview();
     }
   });
 
@@ -3143,19 +3430,19 @@ function initNotesDrawer() {
       notes.unshift(newNote);
       saveNotes(notes);
       toast('Zapisano nową notatkę w Hubie!');
-      drawer.setAttribute('hidden', '');
+      setDrawerOpen(false, false);
       location.hash = '#/notatki?id=' + newNote.id;
     };
   }
 
   if (clearBtn) {
-    clearBtn.onclick = () => {
-      if (confirm('Czy na pewno chcesz wyczyścić szybki brudnopis?')) {
-        input.value = '';
-        try { localStorage.removeItem(SCRATCH_KEY); } catch (e) {}
-        updatePreview();
-        toast('Wyczyszczono brudnopis');
-      }
+    clearBtn.onclick = async () => {
+      const ok = await hubConfirm('Wyczyścić szybki brudnopis?', 'Cała niezapisana treść z podręcznego brudnopisu zostanie usunięta.', 'Wyczyść', { danger: true });
+      if (!ok) return;
+      input.value = '';
+      try { localStorage.removeItem(SCRATCH_KEY); } catch (e) {}
+      updatePreview();
+      toast('Wyczyszczono brudnopis');
     };
   }
 }
@@ -3183,7 +3470,7 @@ function viewNotes(parts, params) {
   const render = () => {
     main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
       <div class="eyebrow">Własne notatki</div>
-      <h2>Notatnik kliniczny Markdown</h2>
+      <h1>Notatnik kliniczny Markdown</h1>
       <p class="lead">Twórz i organizuj notatki do zaliczenia z pełnym wsparciem składni Markdown: tabelami parametrów, checklistami objawów, dawkami i blokami leków.</p>
 
       <div class="notes-layout">
@@ -3218,9 +3505,9 @@ function viewNotes(parts, params) {
             <button type="button" data-f="i" title="Kursywa (Ctrl+I)"><i>I</i></button>
             <button type="button" data-f="h2" title="Nagłówek sekcji">H2</button>
             <button type="button" data-f="h3" title="Podnagłówek">H3</button>
-            <button type="button" data-f="list" title="Lista punktowana">• Lista</button>
-            <button type="button" data-f="check" title="Checklista">☑ Zadanie</button>
-            <button type="button" data-f="table" title="Tabela parametrów">▦ Tabela</button>
+            <button type="button" data-f="list" title="Lista punktowana">${uiIco('list')} Lista</button>
+            <button type="button" data-f="check" title="Checklista">${uiIco('checksq')} Zadanie</button>
+            <button type="button" data-f="table" title="Tabela parametrów">${uiIco('table')} Tabela</button>
             <button type="button" data-f="quote" title="Cytat / uwaga">” Cytat</button>
             <button type="button" data-f="code" title="Kod / dawka">\`Kod\`</button>
 
@@ -3229,7 +3516,7 @@ function viewNotes(parts, params) {
               <option value="choroba">Karta jednostki chorobowej</option>
               <option value="nagle">Różnicowanie stanów nagłych (ABCDE)</option>
               <option value="dawki">Tabela dawek ratunkowych OB (PPH / MgSO₄)</option>
-              <option value="checklista">Checklista 15 modułów</option>
+              <option value="checklista">Checklista ${MODS.length} modułów</option>
             </select>
 
             <div style="flex:1"></div>
@@ -3240,9 +3527,9 @@ function viewNotes(parts, params) {
               <button data-m="preview" aria-pressed="${noteViewMode === 'preview'}">Podgląd</button>
             </div>
 
-            <button type="button" id="btnExportMd" class="btn sec sm" title="Pobierz plik Markdown">📥 .md</button>
-            <button type="button" id="btnCopyMd" class="btn sec sm" title="Kopiuj zawartość do schowka">📋 Kopiuj</button>
-            <button type="button" id="btnDeleteNote" class="btn sec sm" style="color:var(--red)" title="Usuń notatkę">🗑️</button>
+            <button type="button" id="btnExportMd" class="btn sec sm" title="Pobierz plik Markdown">${uiIco('download')} .md</button>
+            <button type="button" id="btnCopyMd" class="btn sec sm" title="Kopiuj zawartość do schowka">${uiIco('copy')} Kopiuj</button>
+            <button type="button" id="btnDeleteNote" class="btn sec sm" style="color:var(--red)" title="Usuń notatkę" aria-label="Usuń notatkę">${uiIco('trash')}</button>
           </div>
 
           <div class="notes-split mode-${noteViewMode}" id="notesSplit">
@@ -3329,19 +3616,19 @@ function viewNotes(parts, params) {
 
     // Usuwanie notatki
     if (delBtn) {
-      delBtn.onclick = () => {
+      delBtn.onclick = async () => {
         let allNotes = getNotes();
         if (allNotes.length <= 1) {
           toast('Nie można usunąć ostatniej notatki');
           return;
         }
-        if (confirm(`Czy na pewno chcesz usunąć notatkę "${activeNote.title}"?`)) {
-          allNotes = allNotes.filter(n => n.id !== activeNote.id);
-          saveNotes(allNotes);
-          activeNoteId = allNotes[0].id;
-          toast('Notatka usunięta');
-          viewNotes(parts, { id: activeNoteId });
-        }
+        const ok = await hubConfirm('Usunąć notatkę?', `Czy na pewno chcesz usunąć notatkę „${activeNote.title}”?`, 'Usuń notatkę', { danger: true });
+        if (!ok) return;
+        allNotes = allNotes.filter(n => n.id !== activeNote.id);
+        saveNotes(allNotes);
+        activeNoteId = allNotes[0].id;
+        toast('Notatka usunięta');
+        viewNotes(parts, { id: activeNoteId });
       };
     }
 
@@ -3378,7 +3665,7 @@ function viewNotes(parts, params) {
           allNotes[idx].mod = modSel.value;
           allNotes[idx].updatedAt = Date.now();
           const saved = saveNotes(allNotes);
-          if (saveInd) saveInd.textContent = saved ? '✓ Zapisano automatycznie' : '⚠️ Brak miejsca – nie zapisano';
+          if (saveInd) saveInd.textContent = saved ? '✓ Zapisano automatycznie' : 'Brak miejsca – nie zapisano';
           listCont.innerHTML = renderNoteItems(allNotes, activeNoteId, (searchIn || {}).value || '', curFilterMod);
         }
       }, 400);
@@ -3404,11 +3691,13 @@ function viewNotes(parts, params) {
           insertMarkdownAt(contentIn, 'i');
           if (previewPane) previewPane.innerHTML = parseMarkdown(contentIn.value);
           triggerSave();
-        } else if (e.key === 'Tab') {
+        } else if ((e.ctrlKey || e.metaKey) && e.key === ']') {
           e.preventDefault();
           const start = contentIn.selectionStart, end = contentIn.selectionEnd;
           contentIn.value = contentIn.value.slice(0, start) + '  ' + contentIn.value.slice(end);
           contentIn.selectionStart = contentIn.selectionEnd = start + 2;
+          if (previewPane) previewPane.innerHTML = parseMarkdown(contentIn.value);
+          triggerSave();
         }
       });
     }
@@ -3424,12 +3713,15 @@ function viewNotes(parts, params) {
 
     // Szablony
     if (tmplSel) {
-      tmplSel.addEventListener('change', () => {
+      tmplSel.addEventListener('change', async () => {
         const val = tmplSel.value;
         if (!val || !NOTE_TEMPLATES[val]) return;
-        if (contentIn.value.trim() && !confirm('Czy na pewno wstawić szablon na końcu notatki?')) {
-          tmplSel.value = '';
-          return;
+        if (contentIn.value.trim()) {
+          const ok = await hubConfirm('Wstawić szablon medyczny?', 'Szablon zostanie dopisany na końcu bieżącej notatki.', 'Wstaw szablon');
+          if (!ok) {
+            tmplSel.value = '';
+            return;
+          }
         }
         contentIn.value = (contentIn.value ? contentIn.value + '\n\n' : '') + NOTE_TEMPLATES[val];
         tmplSel.value = '';
@@ -3493,8 +3785,104 @@ let EXAM_CONF = {
 
 let EXAM_SESSION = null;
 
+function saveActiveExam() {
+  if (!EXAM_SESSION || EXAM_SESSION.finished || !EXAM_SESSION.list || !EXAM_SESSION.list.length) {
+    try { localStorage.removeItem(EXAM_ACTIVE_KEY); } catch (e) {}
+    return;
+  }
+  const es = EXAM_SESSION;
+  const payload = {
+    id: es.id,
+    qIds: es.list.map(q => q.id),
+    i: es.i,
+    userAnswers: Object.fromEntries(Object.entries(es.userAnswers || {}).map(([k, v]) => [k, [...v]])),
+    flagged: [...(es.flagged || [])],
+    startedAt: es.startedAt,
+    totalSec: es.totalSec,
+    remainingSec: es.remainingSec,
+    savedAt: Date.now(),
+    config: {
+      count: EXAM_CONF.count,
+      timeMode: EXAM_CONF.timeMode,
+      banks: [...EXAM_CONF.banks],
+      mods: [...EXAM_CONF.mods],
+      hitsOnly: EXAM_CONF.hitsOnly,
+      gapOnly: EXAM_CONF.gapOnly,
+      includeUnverified: EXAM_CONF.includeUnverified
+    }
+  };
+  safeStorageSet(EXAM_ACTIVE_KEY, JSON.stringify(payload));
+}
+
+function clearActiveExam() {
+  if (EXAM_SESSION && EXAM_SESSION.timer) {
+    clearInterval(EXAM_SESSION.timer);
+    EXAM_SESSION.timer = null;
+  }
+  EXAM_SESSION = null;
+  try { localStorage.removeItem(EXAM_ACTIVE_KEY); } catch (e) {}
+}
+
+function loadActiveExam() {
+  if (EXAM_SESSION && !EXAM_SESSION.finished) return EXAM_SESSION;
+  try {
+    const raw = localStorage.getItem(EXAM_ACTIVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.qIds) || !data.qIds.length) {
+      localStorage.removeItem(EXAM_ACTIVE_KEY);
+      return null;
+    }
+    const list = data.qIds.map(id => qById[id]).filter(Boolean);
+    if (!list.length) {
+      localStorage.removeItem(EXAM_ACTIVE_KEY);
+      return null;
+    }
+    const userAnswers = {};
+    if (data.userAnswers && typeof data.userAnswers === 'object') {
+      Object.entries(data.userAnswers).forEach(([k, arr]) => {
+        if (Array.isArray(arr) && arr.length) userAnswers[k] = new Set(arr.map(Number).filter(Number.isInteger));
+      });
+    }
+    const flagged = new Set(Array.isArray(data.flagged) ? data.flagged : []);
+    if (data.config && typeof data.config === 'object') {
+      if (typeof data.config.count === 'number') EXAM_CONF.count = data.config.count;
+      if (typeof data.config.timeMode === 'string') EXAM_CONF.timeMode = data.config.timeMode;
+      if (Array.isArray(data.config.banks)) EXAM_CONF.banks = new Set(data.config.banks);
+      if (Array.isArray(data.config.mods)) EXAM_CONF.mods = new Set(data.config.mods);
+      EXAM_CONF.hitsOnly = !!data.config.hitsOnly;
+      EXAM_CONF.gapOnly = !!data.config.gapOnly;
+      EXAM_CONF.includeUnverified = !!data.config.includeUnverified;
+    }
+    const rem = data.remainingSec == null ? null : Math.max(0, Number(data.remainingSec));
+    EXAM_SESSION = {
+      id: data.id || ('exam_' + Date.now()),
+      list,
+      i: Math.max(0, Math.min(list.length - 1, Number(data.i) || 0)),
+      userAnswers,
+      flagged,
+      startedAt: Number(data.startedAt) || Date.now(),
+      totalSec: data.totalSec == null ? null : Number(data.totalSec),
+      remainingSec: rem,
+      warned5: rem != null && rem <= 300,
+      warned1: rem != null && rem <= 60,
+      timer: null,
+      finished: false,
+      report: null
+    };
+    return EXAM_SESSION;
+  } catch (e) {
+    return null;
+  }
+}
+
+window.addEventListener('pagehide', () => {
+  if (EXAM_SESSION && !EXAM_SESSION.finished) saveActiveExam();
+});
+
 function getExamQuestionsPool() {
   return Q.filter(q => {
+    if (!q.opts || !q.opts.length) return false;
     if (!EXAM_CONF.includeUnverified && (!q.keys || !q.keys.length)) return false;
     if (EXAM_CONF.hitsOnly && (!q.reps || q.reps < 2)) return false;
     if (EXAM_CONF.gapOnly && !q.gap) return false;
@@ -3511,6 +3899,8 @@ function viewExam(parts, params) {
     toast('Nie znaleziono egzaminu w historii');
   }
 
+  if (!EXAM_SESSION) loadActiveExam();
+
   if (EXAM_SESSION && !EXAM_SESSION.finished) {
     return renderActiveExam();
   }
@@ -3524,27 +3914,30 @@ function viewExam(parts, params) {
 
 function renderExamSetup() {
   const pool = getExamQuestionsPool();
+  const quickCap = Math.min(20, pool.length);
+  const stdCap = Math.min(50, pool.length);
+  const fullCap = Math.min(100, pool.length);
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:920px">
     <div class="eyebrow">Symulator egzaminu</div>
-    <h2>Egzamin próbny z ginekologii i położnictwa</h2>
+    <h1>Egzamin próbny z ginekologii i położnictwa</h1>
     <p class="lead">Sprawdź swoją wiedzę w warunkach zbliżonych do oficjalnego zaliczenia: licznik czasu, brak podglądu poprawnych odpowiedzi w trakcie, nawigacja po siatce pytań z flagami „do sprawdzenia” oraz oficjalny próg zdawalności 60%.</p>
 
     <!-- Kafelki szybkich presetów -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.8rem">
       <button type="button" class="card preset-card" data-preset="quick" aria-pressed="${EXAM_CONF.count === 20 && EXAM_CONF.timeMode === '1min'}">
-        <span style="display:block;font-size:1.4rem;margin-bottom:.3rem">⚡ Szybki test</span>
-        <strong style="display:block">20 pytań · 20 minut</strong>
+        <span style="display:block;font-size:1.2rem;font-weight:800;margin-bottom:.3rem">${uiIco('zap')} Szybki test</span>
+        <strong id="exPresetQuickMeta" style="display:block">${quickCap} pytań · ${quickCap} minut</strong>
         <span class="srcline" style="display:block;margin-top:.3rem">Krótka weryfikacja wiedzy z losowych modułów.</span>
       </button>
       <button type="button" class="card preset-card" data-preset="standard" aria-pressed="${EXAM_CONF.count === 50 && EXAM_CONF.timeMode === '1min'}">
-        <span style="display:block;font-size:1.4rem;margin-bottom:.3rem">🎓 Egzamin standardowy</span>
-        <strong style="display:block">50 pytań · 50 minut</strong>
-        <span class="srcline" style="display:block;margin-top:.3rem">Zrównoważony przekrój wszystkich 15 modułów.</span>
+        <span style="display:block;font-size:1.2rem;font-weight:800;margin-bottom:.3rem">${uiIco('grad')} Egzamin standardowy</span>
+        <strong id="exPresetStdMeta" style="display:block">${stdCap} pytań · ${stdCap} minut</strong>
+        <span class="srcline" style="display:block;margin-top:.3rem">Zrównoważony przekrój wszystkich ${MODS.length} modułów.</span>
       </button>
       <button type="button" class="card preset-card" data-preset="full" aria-pressed="${EXAM_CONF.count === 100 && EXAM_CONF.timeMode === '1min'}">
-        <span style="display:block;font-size:1.4rem;margin-bottom:.3rem">📚 Pełny maraton</span>
-        <strong style="display:block">100 pytań · 100 minut</strong>
-        <span class="srcline" style="display:block;margin-top:.3rem">Maksymalny test wytrzymałości i wiedzy.</span>
+        <span style="display:block;font-size:1.2rem;font-weight:800;margin-bottom:.3rem">${uiIco('books')} Pełny maraton</span>
+        <strong id="exPresetFullMeta" style="display:block">${fullCap} pytań · ${fullCap} minut</strong>
+        <span class="srcline" style="display:block;margin-top:.3rem">Maksymalny test wytrzymałości i wiedzy (do 100 pytań z puli).</span>
       </button>
     </div>
 
@@ -3557,7 +3950,7 @@ function renderExamSetup() {
           <button data-n="30" aria-pressed="${EXAM_CONF.count === 30}">30</button>
           <button data-n="50" aria-pressed="${EXAM_CONF.count === 50}">50</button>
           <button data-n="100" aria-pressed="${EXAM_CONF.count === 100}">100</button>
-          <button data-n="0" aria-pressed="${EXAM_CONF.count === 0}">Wszystkie (${pool.length})</button>
+          <button data-n="0" id="exNAll" aria-pressed="${EXAM_CONF.count === 0}">Wszystkie (${pool.length})</button>
         </div>
       </div>
 
@@ -3597,8 +3990,8 @@ function renderExamSetup() {
           <div class="frow">
             <span class="flab">Flagi</span>
             <div class="pillrow" id="exFilters">
-              <button class="tgl" id="exHitsOnly" aria-pressed="${EXAM_CONF.hitsOnly}">🔥 Tylko hity zakładowe (≥2 źródła)</button>
-              <button class="tgl" id="exGapOnly" aria-pressed="${EXAM_CONF.gapOnly}">⚠️ Tylko pytania sporne (klucz vs wytyczne: ${Q.filter(q => q.gap).length})</button>
+              <button class="tgl" id="exHitsOnly" aria-pressed="${EXAM_CONF.hitsOnly}">${uiIco('flame')} Tylko hity zakładowe (≥2 źródła)</button>
+              <button class="tgl" id="exGapOnly" aria-pressed="${EXAM_CONF.gapOnly}">${uiIco('warn')} Tylko pytania sporne (klucz vs wytyczne: ${Q.filter(q => q.gap).length})</button>
               <button class="tgl" id="exUnverified" aria-pressed="${EXAM_CONF.includeUnverified}">Uwzględnij pytania bez oficjalnego klucza (do dyskusji)</button>
             </div>
           </div>
@@ -3624,6 +4017,10 @@ function renderExamSetup() {
     const count = EXAM_CONF.count === 0 ? curPool.length : Math.min(EXAM_CONF.count, curPool.length);
     $('#exPoolInfo').textContent = curPool.length ? `Dostępna pula: ${curPool.length} pytań (do testu: ${count})` : 'Pula pusta! Zaznacz przynajmniej jeden bank i moduł.';
     $('#btnStartExam').disabled = !curPool.length;
+    const allBtn = $('#exNAll'); if (allBtn) allBtn.textContent = `Wszystkie (${curPool.length})`;
+    const qMeta = $('#exPresetQuickMeta'); if (qMeta) { const c = Math.min(20, curPool.length); qMeta.textContent = `${c} pytań · ${c} minut`; }
+    const sMeta = $('#exPresetStdMeta'); if (sMeta) { const c = Math.min(50, curPool.length); sMeta.textContent = `${c} pytań · ${c} minut`; }
+    const fMeta = $('#exPresetFullMeta'); if (fMeta) { const c = Math.min(100, curPool.length); fMeta.textContent = `${c} pytań · ${c} minut`; }
     if (exAdvLabel) {
       const fCnt = (EXAM_CONF.hitsOnly ? 1 : 0) + (EXAM_CONF.gapOnly ? 1 : 0) + (EXAM_CONF.includeUnverified ? 1 : 0);
       exAdvLabel.textContent = `Filtry zaawansowane: wybór modułów (${EXAM_CONF.mods.size}/${MODS.length})${fCnt ? ` i ${fCnt} ${fCnt === 1 ? 'flaga aktywna' : 'flagi aktywne'}` : ' i flagi specjalne'}`;
@@ -3760,21 +4157,27 @@ function startExam() {
     startedAt: Date.now(),
     totalSec,
     remainingSec: totalSec,
+    warned5: false,
+    warned1: false,
     timer: null,
     finished: false,
     report: null
   };
 
+  saveActiveExam();
   startExamTimer();
   renderActiveExam();
 }
 
 function startExamTimer() {
-  if (!EXAM_SESSION || EXAM_SESSION.finished || EXAM_SESSION.remainingSec <= 0 || EXAM_SESSION.timer) return;
+  if (!EXAM_SESSION || EXAM_SESSION.finished || EXAM_SESSION.remainingSec == null || EXAM_SESSION.remainingSec <= 0 || EXAM_SESSION.timer) return;
   EXAM_SESSION.timer = setInterval(() => {
     if (!EXAM_SESSION || EXAM_SESSION.finished) return;
     EXAM_SESSION.remainingSec--;
     updateExamTimerUI();
+    if (EXAM_SESSION.remainingSec > 0 && EXAM_SESSION.remainingSec % 5 === 0) {
+      saveActiveExam();
+    }
     if (EXAM_SESSION.remainingSec <= 0) {
       clearInterval(EXAM_SESSION.timer);
       EXAM_SESSION.timer = null;
@@ -3789,17 +4192,32 @@ function updateExamTimerUI() {
   if (!el || !EXAM_SESSION) return;
   const rem = EXAM_SESSION.remainingSec;
   if (rem == null) {
-    el.textContent = '⏱️ Bez limitu';
+    el.innerHTML = `${uiIco('clock')} Bez limitu`;
     return;
   }
   const m = Math.floor(Math.max(0, rem) / 60);
   const s = Math.max(0, rem) % 60;
-  el.textContent = `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  el.innerHTML = `${uiIco('clock')} ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   el.classList.toggle('warn', rem <= 300 && rem > 60);
   el.classList.toggle('danger', rem <= 60);
+
+  const live = $('#examTimerLive');
+  if (rem <= 300 && rem > 60 && !EXAM_SESSION.warned5) {
+    EXAM_SESSION.warned5 = true;
+    if (live) live.textContent = 'Uwaga: pozostało mniej niż 5 minut do końca egzaminu.';
+    toast('Uwaga: pozostało mniej niż 5 minut do końca egzaminu.');
+  } else if (rem <= 60 && rem > 0 && !EXAM_SESSION.warned1) {
+    EXAM_SESSION.warned1 = true;
+    if (live) live.textContent = 'Uwaga: pozostała ostatnia minuta egzaminu!';
+    toast('Uwaga: pozostała ostatnia minuta egzaminu!');
+  }
 }
 
 let examGridExpanded = false;
+
+function examPillLabel(idx, hasAns, fl, cur) {
+  return `Pytanie ${idx + 1}: ${hasAns ? 'odpowiedziano' : 'bez odpowiedzi'}${fl ? ', oznaczone flagą' : ''}${cur ? ', bieżące' : ''}`;
+}
 
 function renderActiveExam() {
   const es = EXAM_SESSION;
@@ -3814,16 +4232,18 @@ function renderActiveExam() {
   const multi = q.keys.length > 1;
 
   main.innerHTML = `
+  <h1 class="sr">Egzamin próbny — pytanie ${es.i + 1} z ${total}</h1>
+  <span id="examTimerLive" class="sr" role="status" aria-live="polite"></span>
   <!-- Pasek górny egzaminu -->
   <div class="exam-bar">
     <div class="wrap exam-bar-inner">
       <div style="display:flex;align-items:center;gap:.75rem">
-        <span class="exam-timer" id="examTimer">⏱️ --:--</span>
+        <span class="exam-timer" id="examTimer">${uiIco('clock')} --:--</span>
         <span style="font-weight:700;font-size:.9rem;color:var(--ink-2)">Pytanie <b>${es.i + 1}</b> z ${total}</span>
       </div>
       <div style="display:flex;align-items:center;gap:.6rem">
-        <button class="btn-flag ${isFlagged ? 'active' : ''}" id="btnExamFlag">
-          <span>🚩</span><span id="btnExamFlagTxt">${isFlagged ? 'Oznaczone' : 'Oznacz flagą'}</span>
+        <button class="btn-flag ${isFlagged ? 'active' : ''}" id="btnExamFlag" aria-pressed="${isFlagged}">
+          ${uiIco('flag')}<span id="btnExamFlagTxt">${isFlagged ? 'Oznaczone' : 'Oznacz flagą'}</span>
         </button>
         <button class="btn sec sm" id="btnExamQuit" style="color:var(--red)">Zakończ egzamin</button>
       </div>
@@ -3844,12 +4264,12 @@ function renderActiveExam() {
     </div>
 
     <!-- Siatka pytań 1..N -->
-    <div class="exam-pill-grid${examGridExpanded ? ' expanded' : ''}" id="examGrid">
+    <div class="exam-pill-grid${examGridExpanded ? ' expanded' : ''}" id="examGrid" role="navigation" aria-label="Nawigacja po pytaniach egzaminu">
       ${es.list.map((item, idx) => {
-        const hasAns = es.userAnswers[item.id] && es.userAnswers[item.id].size;
+        const hasAns = !!(es.userAnswers[item.id] && es.userAnswers[item.id].size);
         const fl = es.flagged.has(item.id);
         const cur = idx === es.i;
-        return `<button class="exam-q-pill ${cur ? 'active' : ''} ${hasAns ? 'answered' : ''} ${fl ? 'flagged' : ''}" data-idx="${idx}">${idx + 1}</button>`;
+        return `<button class="exam-q-pill ${cur ? 'active' : ''} ${hasAns ? 'answered' : ''} ${fl ? 'flagged' : ''}" data-idx="${idx}" aria-label="${esc(examPillLabel(idx, hasAns, fl, cur))}"${cur ? ' aria-current="step"' : ''}>${idx + 1}</button>`;
       }).join('')}
     </div>
 
@@ -3875,7 +4295,7 @@ function renderActiveExam() {
 
       <div class="acts exam-nav-acts" style="margin-top:1.5rem;justify-content:space-between">
         <button class="btn sec" id="btnPrevQ" ${es.i === 0 ? 'disabled' : ''}>← Poprzednie</button>
-        <span class="muted exam-kbd-hint" style="font-size:.84rem;font-weight:700">Skróty: [←] [→] | [F] Flaga</span>
+        <span class="muted exam-kbd-hint" style="font-size:.84rem;font-weight:700">Skróty: [1–5] / [A–E] odpowiedź · [←] [→] nawigacja · [F] flaga</span>
         <button class="btn pri" id="btnNextQ">${es.i + 1 < total ? 'Następne →' : 'Zakończ i podsumuj →'}</button>
       </div>
     </div>
@@ -3907,6 +4327,7 @@ function renderActiveExam() {
     const pill = e.target.closest('[data-idx]');
     if (!pill) return;
     es.i = +pill.dataset.idx;
+    saveActiveExam();
     renderActiveExam();
   };
 
@@ -3925,11 +4346,15 @@ function renderActiveExam() {
       userSet.add(idx);
     }
     $$('#examOpts .opt').forEach(b => b.classList.toggle('sel', userSet.has(+b.dataset.i)));
-    if (activePill) activePill.classList.toggle('answered', userSet.size > 0);
+    if (activePill) {
+      activePill.classList.toggle('answered', userSet.size > 0);
+      activePill.setAttribute('aria-label', examPillLabel(es.i, userSet.size > 0, es.flagged.has(q.id), true));
+    }
     const cnt = countAnswered();
     const ansEl = $('#examAnsCnt'); if (ansEl) ansEl.textContent = cnt;
     const progEl = $('#examProg'); if (progEl) progEl.setAttribute('aria-valuenow', cnt);
     const fillEl = $('#examProgFill'); if (fillEl) fillEl.style.width = pct(cnt, total) + '%';
+    saveActiveExam();
   };
 
   // Flaga (aktualizacja w miejscu)
@@ -3937,18 +4362,27 @@ function renderActiveExam() {
     const nowFlagged = !es.flagged.has(q.id);
     if (nowFlagged) es.flagged.add(q.id); else es.flagged.delete(q.id);
     const btn = $('#btnExamFlag');
-    if (btn) btn.classList.toggle('active', nowFlagged);
+    if (btn) {
+      btn.classList.toggle('active', nowFlagged);
+      btn.setAttribute('aria-pressed', String(nowFlagged));
+    }
     const txt = $('#btnExamFlagTxt');
     if (txt) txt.textContent = nowFlagged ? 'Oznaczone' : 'Oznacz flagą';
-    if (activePill) activePill.classList.toggle('flagged', nowFlagged);
+    if (activePill) {
+      activePill.classList.toggle('flagged', nowFlagged);
+      const hasAns = !!(es.userAnswers[q.id] && es.userAnswers[q.id].size);
+      activePill.setAttribute('aria-label', examPillLabel(es.i, hasAns, nowFlagged, true));
+    }
     const flCnt = $('#examFlagCnt');
     if (flCnt) flCnt.textContent = es.flagged.size;
+    saveActiveExam();
   };
 
   // Poprzednie / Następne
   $('#btnPrevQ').onclick = () => {
     if (es.i > 0) {
       es.i--;
+      saveActiveExam();
       renderActiveExam();
       window.scrollTo(0, 0);
     }
@@ -3957,50 +4391,71 @@ function renderActiveExam() {
   $('#btnNextQ').onclick = () => {
     if (es.i + 1 < total) {
       es.i++;
+      saveActiveExam();
       renderActiveExam();
       window.scrollTo(0, 0);
     } else {
-      confirmFinishExam();
+      confirmFinishExam(false);
     }
   };
 
-  // Zakończenie egzaminu
-  $('#btnExamQuit').onclick = () => confirmFinishExam();
+  // Zakończenie lub porzucenie egzaminu
+  $('#btnExamQuit').onclick = () => confirmFinishExam(true);
 
-  function confirmFinishExam() {
-    const unanswered = total - Object.keys(es.userAnswers).filter(k => es.userAnswers[k] && es.userAnswers[k].size).length;
+  async function confirmFinishExam(allowAbandon) {
+    const unanswered = total - countAnswered();
     const msg = unanswered > 0
-      ? `Pozostało jeszcze ${unanswered} pytań bez odpowiedzi oraz ${es.flagged.size} oznaczonych flagą.\n\nCzy na pewno chcesz zakończyć egzamin i poznać wynik?`
-      : `Odpowiedziałeś na wszystkie pytania (${total}).\n\nCzy na pewno chcesz zakończyć egzamin i poznać wynik?`;
-    if (confirm(msg)) {
-      finishExam();
+      ? `Pozostało jeszcze ${unanswered} pytań bez odpowiedzi oraz ${es.flagged.size} oznaczonych flagą. Wybierz, czy chcesz ocenić podejście teraz, czy porzucić je bez zapisu w historii.`
+      : `Odpowiedziałeś na wszystkie pytania (${total}). Czy chcesz zakończyć egzamin i poznać wynik?`;
+    if (allowAbandon) {
+      const choice = await hubExamQuitChoice('Zakończyć egzamin próbny?', msg);
+      if (choice === 'finish') finishExam();
+      else if (choice === 'abandon') {
+        clearActiveExam();
+        toast('Egzamin został porzucony bez zapisu w historii');
+        renderExamSetup();
+      }
+    } else {
+      const ok = await hubConfirm('Zakończyć i ocenić egzamin?', msg, 'Zakończ i oceń');
+      if (ok) finishExam();
     }
   }
 }
 
 // Obsługa klawiatury dla egzaminu
 document.addEventListener('keydown', e => {
-  if (!EXAM_SESSION || EXAM_SESSION.finished || current.name !== 'egzamin' || pal?.open) return;
+  if (!EXAM_SESSION || EXAM_SESSION.finished || current.name !== 'egzamin' || pal?.open || $('#confirmModal')?.open) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   const tag = (document.activeElement || {}).tagName || '';
   if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
 
+  const low = e.key.toLowerCase();
   if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    if (EXAM_SESSION.i > 0) { EXAM_SESSION.i--; renderActiveExam(); }
+    if (EXAM_SESSION.i > 0) { EXAM_SESSION.i--; saveActiveExam(); renderActiveExam(); }
   } else if (e.key === 'ArrowRight') {
     e.preventDefault();
-    if (EXAM_SESSION.i + 1 < EXAM_SESSION.list.length) { EXAM_SESSION.i++; renderActiveExam(); }
-  } else if (e.key.toLowerCase() === 'f') {
+    if (EXAM_SESSION.i + 1 < EXAM_SESSION.list.length) { EXAM_SESSION.i++; saveActiveExam(); renderActiveExam(); }
+  } else if (low === 'f') {
     e.preventDefault();
+    const flBtn = $('#btnExamFlag');
+    if (flBtn) flBtn.click();
+  } else {
+    let optIdx = -1;
+    if (/^[1-5]$/.test(e.key)) optIdx = +e.key - 1;
+    else if (/^[a-e]$/.test(low)) optIdx = 'abcde'.indexOf(low);
     const q = EXAM_SESSION.list[EXAM_SESSION.i];
-    EXAM_SESSION.flagged.has(q.id) ? EXAM_SESSION.flagged.delete(q.id) : EXAM_SESSION.flagged.add(q.id);
-    renderActiveExam();
+    if (optIdx >= 0 && q && q.opts && optIdx < q.opts.length) {
+      const btn = $(`#examOpts [data-i="${optIdx}"]`);
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
   }
 });
 
 function finishExam() {
   if (!EXAM_SESSION) return;
   if (EXAM_SESSION.timer) { clearInterval(EXAM_SESSION.timer); EXAM_SESSION.timer = null; }
+  try { localStorage.removeItem(EXAM_ACTIVE_KEY); } catch (e) {}
 
   const es = EXAM_SESSION;
   const { score, total, pct: pctScore, passed, byMod, wrongQIds } = scoreExam(es.list, es.userAnswers);
@@ -4053,7 +4508,7 @@ function renderExamReport(rep, isArchive = false) {
   const renderContent = () => {
     main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:920px">
       <div class="eyebrow">${isArchive ? 'Archiwalny wynik egzaminu' : 'Podsumowanie egzaminu'}</div>
-      <h2>${passed ? '🎉 Gratulacje! Egzamin zaliczony' : '⚠️ Egzamin niezaliczony'}</h2>
+      <h1>${passed ? uiIco('award') + ' Gratulacje! Egzamin zaliczony' : uiIco('warn') + ' Egzamin niezaliczony'}</h1>
       <p class="lead">${isArchive ? `Podejście z dnia ${dateStr}.` : 'Oficjalny próg zdawalności wynosi 60%. Poniżej znajduje się szczegółowa diagnoza mocnych i słabych modułów oraz pełne omówienie pytań.'}</p>
 
       <!-- Duża karta wyniku -->
@@ -4072,9 +4527,9 @@ function renderExamReport(rep, isArchive = false) {
 
       <!-- Akcje główne -->
       <div class="acts" style="margin:1.6rem 0">
-        ${wrongCount ? `<button class="btn pri" id="btnTrainWrong">🎯 Trening z błędnych pytań (${wrongCount})</button>` : ''}
-        <button class="btn sec" id="btnSaveToNotes">📝 Zapisz błędy do Notatnika</button>
-        <button class="btn sec" id="btnNewExam">🔄 Nowy egzamin</button>
+        ${wrongCount ? `<button class="btn pri" id="btnTrainWrong">${uiIco('target')} Trening z błędnych pytań (${wrongCount})</button>` : ''}
+        <button class="btn sec" id="btnSaveToNotes">${uiIco('edit')} Zapisz błędy do Notatnika</button>
+        <button class="btn sec" id="btnNewExam">${uiIco('refresh')} Nowy egzamin</button>
         <a class="btn sec" href="#/postep">Historia i postęp</a>
       </div>
 
@@ -4145,7 +4600,7 @@ function renderExamReport(rep, isArchive = false) {
             <span class="chip" style="font-weight:800;background:${isCorrect ? 'var(--green-l)' : 'var(--red-l)'};color:${isCorrect ? 'var(--green)' : 'var(--red)'}">
               ${isCorrect ? '✓ Poprawna' : '✗ Błędna'}
             </span>
-            ${isFlagged ? '<span class="chip" style="background:var(--amber-l);color:var(--amber)">🚩 Flaga</span>' : ''}
+            ${isFlagged ? `<span class="chip" style="background:var(--amber-l);color:var(--amber)">${uiIco('flag')} Flaga</span>` : ''}
             ${modChips(q)}
             <span class="chip">${esc(ASHORT[q.at])}</span>
             ${confChip(q.conf)}
@@ -4278,7 +4733,7 @@ function viewKalendarz() {
   const render = () => {
     const filtered = CAL_TRIMESTER === 'all' ? calendar : calendar.filter(x => String(x.trimester) === CAL_TRIMESTER);
     main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
-      <h2>Kalendarz badań w ciąży i profilaktyka (MZ / PTGiP)</h2>
+      <h1>Kalendarz badań w ciąży i profilaktyka (MZ / PTGiP)</h1>
       <p class="lead">Standard Organizacyjny Opieki Okołoporodowej w Polsce krok po kroku: obowiązkowe badania laboratoryjne i USG, profilaktyka konfliktu Rh, GBS oraz szczepienia w ciąży.</p>
 
       <div class="trimester-strip">
@@ -4424,15 +4879,15 @@ function renderConfig() {
   const countTrainAdv = () => C.conf.size + (C.includeUnverified ? 1 : 0) + (C.fresh ? 1 : 0) + (C.open ? 1 : 0);
   const advCnt = countTrainAdv();
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:900px">
-    <div class="eyebrow">Trening mieszany</div><h2>Ułóż sesję</h2>
+    <div class="eyebrow">Trening mieszany</div><h1>Ułóż sesję</h1>
     <p class="lead">Pytania pochodzą ze wszystkich atlasów naraz. W trybie nauki omówienie pojawia się od razu, w trybie egzaminu dopiero na końcu, a w trybie fiszek trenujesz aktywne przypominanie.</p>
     <div class="tool">
       <div class="frow"><span class="flab">Bank</span><div class="pillrow" id="cBank">${Object.keys(BANKS).map(b => `<button class="tgl" data-v="${b}" aria-pressed="${C.banks.has(b)}">${BANKS[b].icon} ${BANKS[b].short} (${Q.filter(q => q.bank === b).length})</button>`).join('')}</div></div>
       <div class="frow"><span class="flab">Atlas</span><div class="pillrow" id="cAt">${ATLASES.map(a => `<button class="tgl" data-v="${a.id}" aria-pressed="${C.at.has(a.id)}">${a.tag} ${esc(ASHORT[a.id])}</button>`).join('')}</div></div>
       ${C.mods.size ? `<div class="frow"><span class="flab">Moduły</span><div class="pillrow">${[...C.mods].map(m => `<button class="tgl" data-rm="${m}" aria-pressed="true">[${m}] ${esc(SHORT[m] || m)} ✕</button>`).join('')}</div></div>` : ''}
-      <div class="frow" id="cFlag"><span class="flab">Tylko</span><div class="pillrow"><button class="tgl" data-f="hitsOnly" aria-pressed="${C.hitsOnly}">🔥 hity bazy (≥2)</button><button class="tgl" data-f="gap" aria-pressed="${C.gap}">klucz ≠ wytyczne</button><button class="tgl" data-f="wrong" aria-pressed="${C.wrong}">moje błędne</button><button class="tgl" data-f="bm" aria-pressed="${C.bm}">zakładki</button></div></div>
+      <div class="frow" id="cFlag"><span class="flab">Tylko</span><div class="pillrow"><button class="tgl" data-f="hitsOnly" aria-pressed="${C.hitsOnly}">${uiIco('flame')} hity bazy (≥2)</button><button class="tgl" data-f="gap" aria-pressed="${C.gap}">${uiIco('warn')} klucz ≠ wytyczne</button><button class="tgl" data-f="wrong" aria-pressed="${C.wrong}">moje błędne</button><button class="tgl" data-f="bm" aria-pressed="${C.bm}">zakładki</button></div></div>
       <div class="frow"><span class="flab">Liczba</span><div class="seg" id="cN">${[10, 20, 40, 0].map(n => `<button data-n="${n}" aria-pressed="${C.n === n}">${n || 'Wszystkie'}</button>`).join('')}</div>
-        <span class="flab" style="min-width:0;margin-left:1rem">Tryb</span><div class="seg" id="cMode"><button data-m="learn" aria-pressed="${C.mode === 'learn'}">Nauka</button><button data-m="exam" aria-pressed="${C.mode === 'exam'}">Egzamin</button><button data-m="flash" aria-pressed="${C.mode === 'flash'}">🃏 Fiszki</button></div></div>
+        <span class="flab" style="min-width:0;margin-left:1rem">Tryb</span><div class="seg" id="cMode"><button data-m="learn" aria-pressed="${C.mode === 'learn'}">Nauka</button><button data-m="exam" aria-pressed="${C.mode === 'exam'}">Egzamin</button><button data-m="flash" aria-pressed="${C.mode === 'flash'}">${uiIco('cards')} Fiszki</button></div></div>
       <details class="adv-filters" id="cAdv"${C.advOpen || advCnt > 0 ? ' open' : ''}>
         <summary><span id="cAdvLabel">Filtry zaawansowane: pewność klucza i flagi techniczne${advCnt ? ` (${advCnt} aktywne)` : ''}</span></summary>
         <div class="adv-body">
@@ -4518,16 +4973,17 @@ function renderSession() {
       return `<button class="opt ${cls}" data-i="${i}" ${done ? 'disabled' : ''}><span class="l">${L[i]}</span><span>${esc(o)}</span></button>`;
     }).join('')}</div>${!done && multi ? '<div class="acts" style="margin-top:.7rem"><button class="btn dark" id="check" ' + (s.sel.size ? '' : 'disabled') + '>Sprawdź</button></div>' : ''}${done && learn ? explain(q) : ''}${done && !learn ? '<p class="srcline">Odpowiedź zapisana. Omówienie zobaczysz po zakończeniu sesji.</p>' : ''}<div class="acts${done ? ' trening-next-sticky' : ''}" id="nextRow">${!done && prevBtnHtml ? prevBtnHtml : ''}</div>`;
   }
-  const modeLabel = s.mode === 'learn' ? 'tryb nauki' : (s.mode === 'flash' ? '🃏 tryb fiszek' : 'tryb egzaminu');
+  const modeLabel = s.mode === 'learn' ? 'tryb nauki' : (s.mode === 'flash' ? uiIco('cards') + ' tryb fiszek' : 'tryb egzaminu');
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap qz">
+    <h1 class="sr">Trening mieszany — pytanie ${s.i + 1} z ${s.list.length}</h1>
     <div class="qprog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.list.length}" aria-valuenow="${s.i}"><i style="width:${100 * s.i / s.list.length}%"></i></div>
     <div class="qhead"><span>Pytanie ${s.i + 1} z ${s.list.length} · ${modeLabel}</span><span>${learn || isFlash || !done ? `Poprawne: ${good}/${s.log.length}` : ''}</span><button class="btn sec sm" id="quit">Zakończ sesję</button></div>
     <div class="qbox"><div class="tags" style="display:flex;gap:.3rem;flex-wrap:wrap">
       ${bankChip(q.bank)}
       ${modChips(q)}
-      ${q.reps >= 2 ? `<span class="chip hit">🔥 Hit (${q.reps}x)</span>` : ''}
-      ${q.gap ? `<span class="chip gap">⚠️ klucz ≠ wytyczne</span>` : ''}
-      ${q.isGlued ? `<span class="chip glued">⚠️ OCR łączone</span>` : ''}
+      ${q.reps >= 2 ? `<span class="chip hit">${uiIco('flame')} Hit (${q.reps}x)</span>` : ''}
+      ${q.gap ? `<span class="chip gap">${uiIco('warn')} klucz ≠ wytyczne</span>` : ''}
+      ${q.isGlued ? `<span class="chip glued">${uiIco('warn')} OCR łączone</span>` : ''}
       ${learn || isFlash || q.type === 'open' ? confChip(q.conf) : ''}
       <span class="chip">${esc(ASHORT[q.at] || q.at || 'Moduł')}</span>
     </div>
@@ -4549,11 +5005,12 @@ function renderSession() {
       window.scrollTo(0, 0);
     };
   };
-  $('#quit').onclick = () => {
+  $('#quit').onclick = async () => {
     const rem = s.list.length - s.i - (done ? 1 : 0);
     if (rem > 0) {
       const noun = rem === 1 ? 'pytanie' : (rem % 10 >= 2 && rem % 10 <= 4 && (rem % 100 < 12 || rem % 100 > 14)) ? 'pytania' : 'pytań';
-      if (!confirm(`Przerwać bieżącą sesję? Odpowiedziano na ${s.log.length} z ${s.list.length} pytań — pozostałe ${rem} ${noun} zostanie pominiętych.`)) return;
+      const ok = await hubConfirm('Przerwać bieżącą sesję?', `Odpowiedziano na ${s.log.length} z ${s.list.length} pytań — pozostałe ${rem} ${noun} zostanie pominiętych.`, 'Zakończ sesję');
+      if (!ok) return;
     }
     s.i = s.list.length;
     renderSession();
@@ -4641,7 +5098,7 @@ function renderResults() {
   const wrong = s.log.filter(x => !x.ok).map(x => qById[x.id]).filter(Boolean);
   const p = pct(good, tot), col = p >= 80 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap" style="max-width:900px">
-    <div class="eyebrow">Wynik sesji</div>
+    <div class="eyebrow">Trening mieszany</div><h1>Wynik sesji</h1>
     <div class="card res"><div><div class="big" style="color:${col}">${p}%</div><div class="muted" style="font-weight:700">${good} z ${tot} poprawnie</div></div>
       <div class="bk">${Object.keys(by).sort((a, b) => IDX[a] - IDX[b]).map(k => `<div class="bkrow"><span class="chip m" style="color:${gOf(k).color}">[${k}]</span><div class="t"><i style="width:${pct(by[k].g, by[k].t)}%;background:${gOf(k).color}"></i></div><span class="mono">${by[k].g}/${by[k].t}</span></div>`).join('') || '<span class="muted">Brak odpowiedzi</span>'}</div></div>
     <div class="acts" style="margin:1.2rem 0">${wrong.length ? `<button class="btn pri" id="redo">Powtórz błędne (${wrong.length})</button>` : ''}<button class="btn sec" id="again">Nowa sesja</button><a class="btn sec" href="#/postep">Postęp</a></div>
@@ -4656,8 +5113,9 @@ function renderResults() {
 function viewProgress() {
   const att = Object.keys(S.ans).filter(k => qById[k]), ok = att.filter(k => S.ans[k].last).length;
   const dc = doneCount();
+  const notesCount = getNotes().length;
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
-    <div class="eyebrow">Postęp</div><h2>Gdzie jesteś</h2>
+    <div class="eyebrow">Postęp</div><h1>Gdzie jesteś</h1>
     <div class="agrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:1.6rem">
       <div class="card"><div class="muted" style="font-weight:700">Moduły opanowane</div><div class="big" style="font-size:2.6rem">${dc}<span class="muted" style="font-size:1.2rem">/${covered.length}</span></div></div>
       <div class="card"><div class="muted" style="font-weight:700">Rozwiązane zadania</div><div class="big" style="font-size:2.6rem">${att.length}<span class="muted" style="font-size:1.2rem">/${Q.length}</span></div></div>
@@ -4681,9 +5139,9 @@ function viewProgress() {
     <p class="muted" style="margin-bottom:.7rem">Wybierz motyw bazowy lub jedną z 6 palet kolorystycznych dla całego Hubu.</p>
     <div id="themeSeg">
       <div class="seg">
-        <button data-theme-choice="auto" aria-pressed="${currentTheme === 'auto'}">🖥️ Auto (systemowy)</button>
-        <button data-theme-choice="light" aria-pressed="${currentTheme === 'light'}">☀️ Jasny</button>
-        <button data-theme-choice="dark" aria-pressed="${currentTheme === 'dark'}">🌙 Ciemny</button>
+        <button data-theme-choice="auto" aria-pressed="${currentTheme === 'auto'}">${uiIco('monitor')} Auto (systemowy)</button>
+        <button data-theme-choice="light" aria-pressed="${currentTheme === 'light'}">${uiIco('sun')} Jasny</button>
+        <button data-theme-choice="dark" aria-pressed="${currentTheme === 'dark'}">${uiIco('moon')} Ciemny</button>
       </div>
       <div class="theme-grid">
         ${THEME_PALETTES.map(p => `<button type="button" class="theme-card" data-theme-choice="${p.id}" aria-pressed="${currentTheme === p.id}">
@@ -4706,10 +5164,10 @@ function viewProgress() {
       </div>
     </div>
     <h3 style="margin:2.2rem 0 .3rem">Kopia zapasowa</h3>
-    <p class="muted" style="margin-bottom:.7rem">Skopiuj kod, aby przenieść postęp na inne urządzenie, albo wklej kod, aby go wczytać.</p>
+    <p class="muted" style="margin-bottom:.7rem">Skopiuj kod, aby przenieść dane na inne urządzenie, albo wklej kod, aby je wczytać.</p>
     <textarea class="code" id="bk" aria-label="Kod kopii zapasowej"></textarea>
     <p id="bkMsg" class="muted" role="alert" style="margin:.45rem 0 0;font-size:.85rem;min-height:1.1em"></p>
-    <div class="acts" style="margin-top:.55rem"><button class="btn sec sm" id="bkGen">Wygeneruj kod</button><button class="btn sec sm" id="bkCopy">Kopiuj</button><button class="btn dark sm" id="bkLoad">Wczytaj z kodu</button><button class="btn sec sm" id="bkReset" style="color:var(--red)">Zeruj postęp</button></div>
+    <div class="acts" style="margin-top:.55rem;align-items:center"><button class="btn sec sm" id="bkGen">Wygeneruj kod</button><button class="btn sec sm" id="bkCopy">Kopiuj</button><button class="btn dark sm" id="bkLoad">Wczytaj z kodu</button><button class="btn sec sm" id="bkReset" style="color:var(--red)">Zeruj postęp</button><span id="bkSummary" class="srcline" style="margin-left:.35rem">Zawiera: postęp + ${notesCount} notatek + ${CUSTOM_Q.length} własnych pytań + narzędzia kliniczne</span></div>
   </div></section>`;
 
   function renderExamHistorySection() {
@@ -4746,7 +5204,7 @@ function viewProgress() {
             <div class="acts">
               <a class="btn sec sm" href="#/egzamin?id=${item.id}">Raport</a>
               ${item.wrongQIds.length ? `<button class="btn pri sm" data-retry-exam="${item.id}">Błędy</button>` : ''}
-              <button class="btn sec sm" data-del-exam="${item.id}" style="color:var(--red);padding:.3rem .55rem" title="Usuń próbę">✕</button>
+              <button class="btn sec sm" data-del-exam="${item.id}" style="color:var(--red);padding:.3rem .55rem" title="Usuń próbę" aria-label="Usuń podejście">${uiIco('x')}</button>
             </div>
           </div>`;
         }).join('')}
@@ -4759,14 +5217,14 @@ function viewProgress() {
 
   // Akcje historii egzaminów
   $$('[data-del-exam]').forEach(b => {
-    b.onclick = () => {
+    b.onclick = async () => {
       const id = b.dataset.delExam;
-      if (confirm('Czy na pewno chcesz usunąć to podejście do egzaminu?')) {
-        S.examHistory = (S.examHistory || []).filter(x => x.id !== id);
-        save();
-        toast('Usunięto podejście z historii');
-        viewProgress();
-      }
+      const okDel = await hubConfirm('Usunąć podejście do egzaminu?', 'Wybrany raport egzaminu próbnego zostanie trwale usunięty z historii.', 'Usuń podejście', { danger: true });
+      if (!okDel) return;
+      S.examHistory = (S.examHistory || []).filter(x => x.id !== id);
+      save();
+      toast('Usunięto podejście z historii');
+      viewProgress();
     };
   });
 
@@ -4783,13 +5241,13 @@ function viewProgress() {
 
   const clearExBtn = $('#btnClearExamHistory');
   if (clearExBtn) {
-    clearExBtn.onclick = () => {
-      if (confirm('Czy na pewno wyczyścić całą historię egzaminów próbnych?')) {
-        S.examHistory = [];
-        save();
-        toast('Historia egzaminów wyczyszczona');
-        viewProgress();
-      }
+    clearExBtn.onclick = async () => {
+      const okClr = await hubConfirm('Wyczyścić historię egzaminów?', 'Wszystkie zapisane raporty z egzaminów próbnych zostaną usunięte.', 'Wyczyść historię', { danger: true });
+      if (!okClr) return;
+      S.examHistory = [];
+      save();
+      toast('Historia egzaminów wyczyszczona');
+      viewProgress();
     };
   }
   const tseg = $('#themeSeg');
@@ -4802,19 +5260,68 @@ function viewProgress() {
   }
   $$('[data-done]').forEach(c => c.addEventListener('change', () => { c.checked ? S.done[c.dataset.done] = 1 : delete S.done[c.dataset.done]; save(); viewProgressSummaryRefresh(); }));
   function viewProgressSummaryRefresh() { const cards = $$('.agrid .card .big'); if (cards[0]) cards[0].innerHTML = `${doneCount()}<span class="muted" style="font-size:1.2rem">/${covered.length}</span>`; }
-  const enc = () => b64EncodeUtf8(JSON.stringify(S));
+
+  const readJsonKey = (k, fallback = null) => {
+    try { const raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; }
+  };
+  const collectBackupExtras = () => {
+    const notesRaw = readJsonKey(NOTES_KEY, null);
+    let scratch = '';
+    try { scratch = localStorage.getItem(SCRATCH_KEY) || ''; } catch (e) {}
+    const extras = {
+      notes: Array.isArray(notesRaw) ? notesRaw : getNotes(),
+      scratch,
+      customQ: Array.isArray(CUSTOM_Q) ? CUSTOM_Q : []
+    };
+    const calc = readJsonKey('ginpol_hub_calc_v1', null);
+    if (calc && typeof calc === 'object' && !Array.isArray(calc)) extras.calc = calc;
+    const ctg = readJsonKey('ginpol_hub_ctg_v1', null);
+    if (ctg && typeof ctg === 'object' && !Array.isArray(ctg)) extras.ctg = ctg;
+    const imaging = readJsonKey('ginpol_hub_imaging_v1', null);
+    if (imaging && typeof imaging === 'object' && !Array.isArray(imaging)) extras.imaging = imaging;
+    return extras;
+  };
+  const enc = () => {
+    const extras = collectBackupExtras();
+    const payload = typeof buildBackupPayload === 'function'
+      ? Object.assign({ v: 2 }, buildBackupPayload(S, extras))
+      : { v: 2, version: 2, state: S, extras };
+    return b64EncodeUtf8(JSON.stringify(payload));
+  };
   const setBkMsg = (msg, isErr) => { const el = $('#bkMsg'); if (!el) return; el.textContent = msg || ''; el.style.color = isErr ? 'var(--red)' : 'var(--teal-d)'; };
-  $('#bkGen').onclick = () => { $('#bk').value = enc(); setBkMsg('Wygenerowano aktualny kod kopii zapasowej.', false); };
-  $('#bkCopy').onclick = async () => { $('#bk').value = enc(); try { await navigator.clipboard.writeText($('#bk').value); toast('Skopiowano kod'); setBkMsg('Skopiowano kod do schowka.', false); } catch (e) { $('#bk').select(); toast('Zaznaczono kod, skopiuj ręcznie'); setBkMsg('Zaznaczono kod — skopiuj go ręcznie (Ctrl/Cmd+C).', false); } };
+  $('#bkGen').onclick = () => { $('#bk').value = enc(); setBkMsg('Wygenerowano pełny kod kopii zapasowej (v2).', false); };
+  $('#bkCopy').onclick = async () => { $('#bk').value = enc(); try { await navigator.clipboard.writeText($('#bk').value); toast('Skopiowano kod kopii zapasowej'); setBkMsg('Skopiowano pełny kod do schowka.', false); } catch (e) { $('#bk').select(); toast('Zaznaczono kod, skopiuj ręcznie'); setBkMsg('Zaznaczono kod — skopiuj go ręcznie (Ctrl/Cmd+C).', false); } };
   $('#bkLoad').onclick = () => {
     const res = parseBackupCode($('#bk').value, defaultState());
     if (!res.ok) { setBkMsg(res.error, true); toast(res.error); return; }
     S = res.state;
     save();
-    toast('Wczytano postęp');
+    let restoredExtras = 0;
+    if (res.extras) {
+      if (Array.isArray(res.extras.notes)) { saveNotes(res.extras.notes); restoredExtras++; }
+      if (typeof res.extras.scratch === 'string') {
+        safeStorageSet(SCRATCH_KEY, res.extras.scratch);
+        const drIn = $('#drawerInput');
+        if (drIn) drIn.value = res.extras.scratch;
+        restoredExtras++;
+      }
+      if (Array.isArray(res.extras.customQ)) { CUSTOM_Q = res.extras.customQ; saveCustomQ(); restoredExtras++; }
+      if (res.extras.calc) { safeStorageSet('ginpol_hub_calc_v1', JSON.stringify(res.extras.calc)); restoredExtras++; }
+      if (res.extras.ctg) { safeStorageSet('ginpol_hub_ctg_v1', JSON.stringify(res.extras.ctg)); restoredExtras++; }
+      if (res.extras.imaging) { safeStorageSet('ginpol_hub_imaging_v1', JSON.stringify(res.extras.imaging)); restoredExtras++; }
+    }
+    toast(restoredExtras ? 'Wczytano pełną kopię zapasową (postęp, notatki, pytania i narzędzia)' : 'Wczytano postęp');
     viewProgress();
   };
-  $('#bkReset').onclick = () => { if ($('#bkReset').dataset.s) { S = defaultState(); save(); toast('Postęp wyzerowany'); viewProgress(); } else { $('#bkReset').dataset.s = 1; $('#bkReset').textContent = 'Kliknij ponownie, aby potwierdzić'; setTimeout(() => { const b = $('#bkReset'); if (b) { delete b.dataset.s; b.textContent = 'Zeruj postęp'; } }, 3000); } };
+  $('#bkReset').onclick = async () => {
+    const okRst = await hubConfirm('Wyzerować cały postęp?', 'Usunie to zapisane odpowiedzi, zakładki, opanowane moduły i historię egzaminów. Tej operacji nie można cofnąć.', 'Zeruj postęp', { danger: true });
+    if (!okRst) return;
+    S = defaultState();
+    save();
+    clearActiveExam();
+    toast('Postęp wyzerowany');
+    viewProgress();
+  };
 }
 
 /* ---------- STOPKA ---------- */
@@ -4862,10 +5369,14 @@ function palRender() {
   if (palItems.length) palIn.setAttribute('aria-activedescendant', 'pal-opt-0');
   else palIn.removeAttribute('aria-activedescendant');
 }
-function palOpen() { if (!ALL) ALL = buildSearchIndex(); if (!pal.open) pal.showModal(); palIn.value = ''; palRender(); palIn.focus(); }
+function palOpen() { if (!ALL) ALL = buildSearchIndex(); if (!pal.open) pal.showModal(); palIn.setAttribute('aria-expanded', 'true'); palIn.value = ''; palRender(); palIn.focus(); }
 $('#openPal').onclick = palOpen;
 const palClose = $('#palClose');
 if (palClose) palClose.onclick = () => pal.close();
+pal.addEventListener('close', () => {
+  palIn.setAttribute('aria-expanded', 'false');
+  palIn.removeAttribute('aria-activedescendant');
+});
 palIn.addEventListener('input', palRender);
 pal.addEventListener('keydown', e => {
   const as = $$('a[role="option"]', palList); if (!as.length) return;
@@ -4969,22 +5480,42 @@ function initTheme() {
     pop.className = 'theme-pop';
     pop.hidden = true;
     pop.setAttribute('role', 'menu');
+    pop.setAttribute('aria-label', 'Wybierz motyw kolorystyczny');
     pop.innerHTML = `
-      <button type="button" class="theme-pop-item" data-theme-choice="auto" aria-pressed="${currentTheme === 'auto'}"><span>Auto (systemowy)</span></button>
-      <button type="button" class="theme-pop-item" data-theme-choice="light" aria-pressed="${currentTheme === 'light'}"><span>Jasny (papier kliniczny)</span></button>
-      <button type="button" class="theme-pop-item" data-theme-choice="dark" aria-pressed="${currentTheme === 'dark'}"><span>Ciemny (Obsidian)</span></button>
-      <div class="theme-pop-sep"></div>
-      ${THEME_PALETTES.map(p => `<button type="button" class="theme-pop-item" data-theme-choice="${p.id}" aria-pressed="${currentTheme === p.id}">
+      <button type="button" class="theme-pop-item" role="menuitemradio" data-theme-choice="auto" aria-checked="${currentTheme === 'auto'}"><span>Auto (systemowy)</span></button>
+      <button type="button" class="theme-pop-item" role="menuitemradio" data-theme-choice="light" aria-checked="${currentTheme === 'light'}"><span>Jasny (papier kliniczny)</span></button>
+      <button type="button" class="theme-pop-item" role="menuitemradio" data-theme-choice="dark" aria-checked="${currentTheme === 'dark'}"><span>Ciemny (Obsidian)</span></button>
+      <div class="theme-pop-sep" role="separator"></div>
+      ${THEME_PALETTES.map(p => `<button type="button" class="theme-pop-item" role="menuitemradio" data-theme-choice="${p.id}" aria-checked="${currentTheme === p.id}">
         <span>${esc(p.name)}</span>
         <span class="theme-pop-swatches" aria-hidden="true"><i style="background:${p.bg}"></i><i style="background:${p.surface}"></i><i style="background:${p.accent}"></i></span>
       </button>`).join('')}
     `;
     wrap.appendChild(pop);
-    const setOpen = open => {
+    const setOpen = (open, focusIdx) => {
       pop.hidden = !open;
       btn.setAttribute('aria-expanded', String(open));
+      if (open && focusIdx !== undefined) {
+        const items = getVisibleMenuItems(pop);
+        if (items.length) items[(focusIdx + items.length) % items.length].focus();
+      }
     };
     btn.onclick = e => { e.stopPropagation(); setOpen(pop.hidden); };
+    btn.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true, 0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setOpen(true, -1); }
+    });
+    pop.addEventListener('keydown', e => {
+      const items = getVisibleMenuItems(pop);
+      if (!items.length) return;
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); items[(idx + 1) % items.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[(idx - 1 + items.length) % items.length].focus(); }
+      else if (e.key === 'Home') { e.preventDefault(); items[0].focus(); }
+      else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
+      else if (e.key === 'Escape') { e.preventDefault(); setOpen(false); btn.focus(); }
+      else if (e.key === 'Tab') { setOpen(false); }
+    });
     pop.addEventListener('click', e => {
       const b = e.target.closest('[data-theme-choice]');
       if (!b) return;
@@ -5017,6 +5548,7 @@ const clinicalCtx = {
   safeStorageSet,
   save,
   toast,
+  hubConfirm,
   ASHORT,
   getNotes,
   saveNotes
@@ -5027,6 +5559,7 @@ const clinicalOsce = HUB_CLINICAL.osce ? HUB_CLINICAL.osce(clinicalCtx) : { open
 const clinicalDiagnostics = HUB_CLINICAL.diagnostics ? HUB_CLINICAL.diagnostics(clinicalCtx) : { viewDiagnostics: () => {} };
 
 delegateBm(main, () => { if (onBmMutate) onBmMutate(); });
+loadActiveExam();
 initNavMenus();
 initTheme();
 initPWA();

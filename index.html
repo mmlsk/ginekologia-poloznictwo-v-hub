@@ -13,7 +13,10 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet" crossorigin="anonymous"></noscript>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="css/hub.css">
 <script>
 try{const t=localStorage.getItem('ginpol_hub_theme')||'auto';const bg={dark:'#090C0E',navy:'#111522',moss:'#0F1A15',espresso:'#211B1A',ochre:'#1A1715',purple:'#17151C',ocean:'#0A1924'};const eff=bg[t]?t:(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'');if(eff){document.documentElement.dataset.theme=eff;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=bg[eff];}}catch(e){}
@@ -24,50 +27,52 @@ try{const t=localStorage.getItem('ginpol_hub_theme')||'auto';const bg={dark:'#09
 <header class="bar">
   <div class="wrap">
     <a class="logo" href="#/" aria-label="Ginekologia i Położnictwo V – strona główna"><i aria-hidden="true"><b></b><b></b><b></b><b></b></i>GinPol<small>V rok</small></a>
-    <ul class="menu" id="menu" aria-label="Główna nawigacja">
-      <li><a href="#/" data-r="start">Start</a></li>
-      <li><a href="#/atlasy" data-r="atlasy">Atlasy</a></li>
-      <li><a href="#/trening" data-r="trening">Trening</a></li>
-      <li><a href="#/pytania" data-r="pytania">Pytania</a></li>
-      <li class="nav-dd" data-group="klinika">
-        <button type="button" class="nav-dd-btn" aria-expanded="false" aria-haspopup="true">Klinika <span class="caret" aria-hidden="true">▾</span></button>
-        <div class="nav-pop" role="menu" hidden>
-          <a href="#/pacjent" data-r="pacjent" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>Izba Przyjęć &amp; OSCE</a>
-          <a href="#/kalkulator" data-r="kalkulator" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/></svg>Kalkulatory &amp; Dawki OB</a>
-          <a href="#/badania" data-r="badania" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2 12 6 12 9 5 14 19 17 12 22 12"/></svg>KTG, USG &amp; Cytologia</a>
-          <a href="#/kalendarz" data-r="kalendarz" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Kalendarz badań w ciąży</a>
-        </div>
-      </li>
-      <li class="nav-dd" data-group="wiecej">
-        <button type="button" class="nav-dd-btn" aria-expanded="false" aria-haspopup="true">Więcej <span class="caret" aria-hidden="true">▾</span></button>
-        <div class="nav-pop" role="menu" hidden>
-          <a href="#/egzamin" data-r="egzamin" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>Egzamin próbny</a>
-          <a href="#/polaczenia" data-r="polaczenia" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5 15.5 15.5"/><circle cx="18" cy="6" r="3"/><path d="M9 6h6"/></svg>Mapa połączeń i pułapek</a>
-          <a href="#/graf" data-r="graf" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.7 7.2 6.3 15.8M13.3 7.2l4.4 8.6M7.5 18h9"/></svg>Graf wiedzy</a>
-          <a href="#/notatki" data-r="notatki" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>Notatki Markdown</a>
-          <a href="#/postep" data-r="postep" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Postęp i historia</a>
-        </div>
-      </li>
-    </ul>
-    <button class="pwa-install" id="btnInstall" aria-label="Zainstaluj aplikację" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="lbl">Zainstaluj</span></button>
-    <a class="srch btn-calc" href="#/kalkulator" aria-label="Kalkulatory położnicze" title="Naegele, Bishop, Apgar i dawki OB"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/></svg><span class="lbl">Kalkulator</span></a>
-    <button class="srch btn-theme" id="btnTheme" aria-label="Zmień motyw" title="Motyw: Auto (systemowy)"><span class="ico" id="themeIcon" aria-hidden="true"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span><span class="lbl" id="themeLabel">Auto</span></button>
-    <button class="srch" id="openPal" aria-label="Szukaj w całym hubie"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="m13 13 4 4"/></svg><span class="lbl">Szukaj</span><kbd>Ctrl K</kbd></button>
+    <nav class="nav-wrap" aria-label="Główna nawigacja">
+      <ul class="menu" id="menu">
+        <li><a href="#/" data-r="start"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/></svg><span>Start</span></a></li>
+        <li><a href="#/atlasy" data-r="atlasy"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8z"/></svg><span>Atlasy</span></a></li>
+        <li><a href="#/trening" data-r="trening"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Trening</span></a></li>
+        <li class="nav-hide-mobile"><a href="#/pytania" data-r="pytania"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Pytania</span></a></li>
+        <li class="nav-dd" data-group="klinika">
+          <button type="button" class="nav-dd-btn" aria-expanded="false" aria-haspopup="true" aria-controls="ddKlinika"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg><span>Klinika</span> <span class="caret" aria-hidden="true">▾</span></button>
+          <div class="nav-pop" id="ddKlinika" role="menu" hidden>
+            <a href="#/pacjent" data-r="pacjent" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>Izba Przyjęć &amp; OSCE</a>
+            <a href="#/kalkulator" data-r="kalkulator" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/></svg>Kalkulatory &amp; Dawki OB</a>
+            <a href="#/badania" data-r="badania" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2 12 6 12 9 5 14 19 17 12 22 12"/></svg>KTG, USG &amp; Cytologia</a>
+            <a href="#/kalendarz" data-r="kalendarz" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Kalendarz badań w ciąży</a>
+          </div>
+        </li>
+        <li class="nav-dd" data-group="wiecej">
+          <button type="button" class="nav-dd-btn" aria-expanded="false" aria-haspopup="true" aria-controls="ddWiecej"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Więcej</span> <span class="caret" aria-hidden="true">▾</span></button>
+          <div class="nav-pop" id="ddWiecej" role="menu" hidden>
+            <a href="#/pytania" data-r="pytania" role="menuitem" class="only-mobile-dd"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Baza pytań</a>
+            <a href="#/egzamin" data-r="egzamin" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>Egzamin próbny</a>
+            <a href="#/polaczenia" data-r="polaczenia" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5 15.5 15.5"/><circle cx="18" cy="6" r="3"/><path d="M9 6h6"/></svg>Mapa połączeń i pułapek</a>
+            <a href="#/graf" data-r="graf" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.7 7.2 6.3 15.8M13.3 7.2l4.4 8.6M7.5 18h9"/></svg>Graf wiedzy</a>
+            <a href="#/notatki" data-r="notatki" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>Notatki Markdown</a>
+            <a href="#/postep" data-r="postep" role="menuitem"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Postęp i historia</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+    <button type="button" class="pwa-install" id="btnInstall" aria-label="Zainstaluj aplikację" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="lbl">Zainstaluj</span></button>
+    <button type="button" class="srch btn-theme" id="btnTheme" aria-label="Zmień motyw" title="Motyw: Auto (systemowy)"><span class="ico" id="themeIcon" aria-hidden="true"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span><span class="lbl" id="themeLabel">Auto</span></button>
+    <button type="button" class="srch" id="openPal" aria-label="Szukaj w całym hubie"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="m13 13 4 4"/></svg><span class="lbl">Szukaj</span><kbd>Ctrl K</kbd></button>
   </div>
 </header>
 <main id="view" tabindex="-1"></main>
 <footer class="ft" id="ft"></footer>
 <dialog class="pal" id="pal" aria-label="Szukaj w hubie">
   <div class="pal-head">
-    <input id="palIn" type="search" role="combobox" aria-autocomplete="list" aria-controls="palList" aria-expanded="true" placeholder="Szukaj modułu, sekcji atlasu, skali lub pytania…" autocomplete="off" aria-label="Szukaj">
-    <button type="button" class="pal-close" id="palClose" aria-label="Zamknij wyszukiwarkę">✕</button>
+    <input id="palIn" type="search" role="combobox" aria-autocomplete="list" aria-controls="palList" aria-expanded="false" placeholder="Szukaj modułu, sekcji atlasu, skali lub pytania…" autocomplete="off" aria-label="Szukaj">
+    <button type="button" class="pal-close" id="palClose" aria-label="Zamknij wyszukiwarkę"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <ul id="palList" role="listbox"></ul>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- Podręczny notatnik (Quick Notes Drawer & FAB) -->
-<button class="fab-notes" id="btnQuickNotes" aria-label="Otwórz szybki brudnopis" title="Szybki brudnopis (Markdown)">
+<button type="button" class="fab-notes" id="btnQuickNotes" aria-label="Otwórz szybki brudnopis" aria-expanded="false" aria-controls="notesDrawer" title="Szybki brudnopis (Markdown)">
   <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
   <span class="fab-label">Brudnopis</span>
 </button>
@@ -79,22 +84,22 @@ try{const t=localStorage.getItem('ginpol_hub_theme')||'auto';const bg={dark:'#09
       <span class="chip-sm" id="scratchSavedStatus">Zapisano</span>
     </div>
     <div class="drawer-actions">
-      <a href="#/notatki" class="btn-icon" id="drawerOpenFull" title="Otwórz pełny notatnik">↗</a>
-      <button class="btn-icon" id="drawerClose" aria-label="Zamknij brudnopis">✕</button>
+      <a href="#/notatki" class="btn-icon" id="drawerOpenFull" aria-label="Otwórz pełny notatnik" title="Otwórz pełny notatnik"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <button type="button" class="btn-icon" id="drawerClose" aria-label="Zamknij brudnopis"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
   <div class="drawer-toolbar">
-    <button type="button" data-md="b" title="Pogrubienie (Ctrl+B)"><b>B</b></button>
-    <button type="button" data-md="i" title="Kursywa (Ctrl+I)"><i>I</i></button>
-    <button type="button" data-md="h2" title="Nagłówek">H2</button>
-    <button type="button" data-md="list" title="Lista punktowana">•</button>
-    <button type="button" data-md="check" title="Lista zadań">☑</button>
-    <button type="button" data-md="table" title="Tabela">▦</button>
+    <button type="button" data-md="b" aria-label="Pogrubienie (Ctrl+B)" title="Pogrubienie (Ctrl+B)"><b>B</b></button>
+    <button type="button" data-md="i" aria-label="Kursywa (Ctrl+I)" title="Kursywa (Ctrl+I)"><i>I</i></button>
+    <button type="button" data-md="h2" aria-label="Nagłówek H2" title="Nagłówek">H2</button>
+    <button type="button" data-md="list" aria-label="Lista punktowana" title="Lista punktowana"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+    <button type="button" data-md="check" aria-label="Lista zadań" title="Lista zadań"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+    <button type="button" data-md="table" aria-label="Tabela Markdown" title="Tabela"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
     <div style="flex:1"></div>
     <button type="button" id="drawerToggleMode" class="btn-sm-text">Podgląd</button>
   </div>
   <div class="drawer-body">
-    <textarea id="drawerInput" placeholder="Szybkie notatki, dawki MgSO4/PPH, kryteria KTG, pułapki egzaminacyjne (Markdown)..."></textarea>
+    <textarea id="drawerInput" aria-label="Brudnopis Markdown" placeholder="Szybkie notatki, dawki MgSO4/PPH, kryteria KTG, pułapki egzaminacyjne (Markdown)..."></textarea>
     <div id="drawerPreview" class="md-preview" hidden></div>
   </div>
   <div class="drawer-footer">
@@ -102,6 +107,17 @@ try{const t=localStorage.getItem('ginpol_hub_theme')||'auto';const bg={dark:'#09
     <button type="button" class="btn sec sm" id="drawerClear" style="color:var(--red)">Wyczyść</button>
   </div>
 </aside>
+
+<dialog id="confirmModal" class="confirm-dlg" aria-labelledby="confirmTitle" aria-describedby="confirmDesc">
+  <div class="confirm-dlg-inner">
+    <h3 id="confirmTitle" class="confirm-dlg-title">Potwierdź akcję</h3>
+    <p id="confirmDesc" class="confirm-dlg-desc"></p>
+    <div class="confirm-dlg-acts">
+      <button type="button" class="btn sec sm" id="confirmCancel">Anuluj</button>
+      <button type="button" class="btn pri sm" id="confirmOk">Potwierdź</button>
+    </div>
+  </div>
+</dialog>
 
 <script defer src="js/meta.js"></script>
 <script defer src="js/questions.js"></script>

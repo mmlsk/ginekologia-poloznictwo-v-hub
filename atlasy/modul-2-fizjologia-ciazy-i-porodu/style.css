@@ -70,7 +70,7 @@
 .bishop-row {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r);
   padding: .75rem .9rem;
 }
 .bishop-row h4 { margin-bottom: .45rem; font-size: .92rem; }
@@ -140,10 +140,10 @@
 .ctg-svg {
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--ctg-bg, var(--surface));
 }
-[data-theme="dark"] .ctg-svg .ctg-grid-line { stroke: #243038 !important; }
-[data-theme="dark"] .ctg-svg .ctg-band { fill: rgba(59, 179, 110, .14) !important; }
+[data-theme] .ctg-svg .ctg-grid-line { stroke: var(--ctg-grid-major) !important; }
+[data-theme] .ctg-svg .ctg-band { fill: var(--ctg-band) !important; }
 
 /* Stages timeline */
 .stage-grid {
