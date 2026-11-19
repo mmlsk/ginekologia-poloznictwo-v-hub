@@ -529,7 +529,7 @@ function modStats(id) {
   qs.forEach(q => { const a = S.ans[q.id]; if (a) { att++; if (a.last) ok++; } });
   return { total: qs.length, att, ok, wrong: att - ok };
 }
-const doneCount = () => covered.filter(m => S.done[m.id]).length;
+const doneCount = () => MODS.filter(m => S.done[m.id]).length;
 
 /* ---------- link do atlasu ---------- */
 function atlasHref(q) {
@@ -1846,9 +1846,9 @@ function viewConnections(parts, params) {
         <h3 style="margin:.5rem 0 .2rem;font-size:1.3rem;font-family:var(--font-display)">${esc(m.n)}</h3>
         <p class="muted">${esc(m.d)}</p>
         <div class="acts" style="margin:.9rem 0">
-          ${m.at ? `<a class="btn pri sm" href="#/atlas/${m.at}/${m.a}">Atlas</a>` : '<span class="chip">brak atlasu</span>'}
+          ${m.at ? `<a class="btn pri sm" href="#/atlas/${m.at}/${m.a}">Atlas</a>` : '<span class="chip">Atlas wkrótce</span>'}
           <a class="btn sec sm" href="#/pytania?mods=${id}">Zadania (${modStats(id).total})</a>
-          ${m.at ? `<a class="btn sec sm" href="#/trening?mods=${id}">Trening</a>` : ''}
+          <a class="btn sec sm" href="#/trening?mods=${id}">Trening</a>
         </div>
         <div class="flab" style="margin-bottom:.4rem">Powiązane moduły</div>
         <div class="pillrow">
@@ -2961,13 +2961,15 @@ function renderAddTab(container) {
       e.preventDefault();
       const stem = $('#sqStem').value.trim();
       const inps = $$('.opt-inp', $('#sqOptsList'));
-      const opts = inps.map(x => x.value.trim()).filter(Boolean);
-      if (opts.length < 2) {
-        toast('Podaj co najmniej 2 opcje odpowiedzi!');
+      const selRadio = $('input[name="sqKey"]:checked');
+      const rawKeyIdx = selRadio ? parseInt(selRadio.value, 10) : 0;
+      const compacted = HUB_LOGIC.compactQuestionOptions(inps.map(x => x.value), rawKeyIdx);
+      if (!compacted.ok) {
+        toast(compacted.error);
+        if (inps[rawKeyIdx] && !inps[rawKeyIdx].value.trim()) inps[rawKeyIdx].focus();
         return;
       }
-      const selRadio = $('input[name="sqKey"]:checked');
-      const keyIdx = selRadio ? parseInt(selRadio.value, 10) : 0;
+      const { opts, keyIdx } = compacted;
       const bank = $('#sqBank').value;
       const mod = $('#sqMod').value;
       const why = $('#sqWhy').value.trim();
@@ -2980,7 +2982,7 @@ function renderAddTab(container) {
         topic: '',
         stem,
         opts,
-        keys: [keyIdx < opts.length ? keyIdx : 0],
+        keys: [keyIdx],
         conf: 'src',
         adapt: false,
         gap: false,
@@ -5117,18 +5119,19 @@ function viewProgress() {
   main.innerHTML = `<section class="blk" style="border:0"><div class="wrap">
     <div class="eyebrow">Postęp</div><h1>Gdzie jesteś</h1>
     <div class="agrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:1.6rem">
-      <div class="card"><div class="muted" style="font-weight:700">Moduły opanowane</div><div class="big" style="font-size:2.6rem">${dc}<span class="muted" style="font-size:1.2rem">/${covered.length}</span></div></div>
+      <div class="card"><div class="muted" style="font-weight:700">Moduły opanowane</div><div class="big" style="font-size:2.6rem">${dc}<span class="muted" style="font-size:1.2rem">/${MODS.length}</span></div></div>
       <div class="card"><div class="muted" style="font-weight:700">Rozwiązane zadania</div><div class="big" style="font-size:2.6rem">${att.length}<span class="muted" style="font-size:1.2rem">/${Q.length}</span></div></div>
       <div class="card"><div class="muted" style="font-weight:700">Poprawne (ostatnia próba)</div><div class="big" style="font-size:2.6rem">${att.length ? pct(ok, att.length) + '%' : '–'}</div></div>
       <div class="card"><div class="muted" style="font-weight:700">Do powtórki</div><div class="big" style="font-size:2.6rem;color:var(--red)">${att.length - ok}</div></div>
     </div>
     <div class="plist">${MODS.map(m => {
-      const st = modStats(m.id); const g = gOf(m.id).color; const at = m.at ? atById[m.at] : null;
-      if (!m.at) return `<div class="prow" style="--gc:${g};opacity:.65"><span class="nb" style="background:transparent;border:2px dashed ${g};color:${g}">${m.id}</span><div><b>${esc(m.n)}</b><small>Brak atlasu w Projekcie</small></div><div class="muted" style="font-weight:700">–</div><span></span></div>`;
-      return `<div class="prow" style="--gc:${g}"><span class="nb">${m.id}</span>
-        <div><b>${esc(m.n)}</b><small>${esc(ASHORT[m.at])}${S.visited[m.at] ? ' · otwarty' : ''}</small></div>
+      const st = modStats(m.id); const g = gOf(m.id).color;
+      const atlasMeta = m.at ? `${esc(ASHORT[m.at])}${S.visited[m.at] ? ' · otwarty' : ''}` : 'Atlas wkrótce';
+      const atlasAction = m.at ? `<a class="btn sec sm" href="#/atlas/${m.at}/${m.a}">Atlas</a>` : '<span class="chip">Atlas wkrótce</span>';
+      return `<div class="prow" style="--gc:${g}"><span class="nb" ${m.at ? '' : `style="background:transparent;border:2px dashed ${g};color:${g}"`}>${m.id}</span>
+        <div><b>${esc(m.n)}</b><small>${atlasMeta}</small></div>
         <div><div class="meter"><i style="width:${pct(st.att, st.total)}%;opacity:.35"></i><i style="width:${pct(st.ok, st.total)}%;position:absolute;left:0;top:0"></i></div><div class="meterl"><span>${st.ok} poprawnych · ${st.wrong} błędnych</span><span>${st.att}/${st.total}</span></div></div>
-        <div class="acts"><label class="chk"><input type="checkbox" data-done="${m.id}" ${S.done[m.id] ? 'checked' : ''}> opanowany</label><a class="btn sec sm" href="#/atlas/${m.at}/${m.a}">Atlas</a><a class="btn ${st.wrong ? 'pri' : 'sec'} sm" href="#/trening?mods=${m.id}${st.wrong ? '&wrong=1' : ''}">${st.wrong ? 'Błędne' : 'Trening'}</a></div></div>`;
+        <div class="acts"><label class="chk"><input type="checkbox" data-done="${m.id}" ${S.done[m.id] ? 'checked' : ''}> opanowany</label>${atlasAction}<a class="btn ${st.wrong ? 'pri' : 'sec'} sm" href="#/trening?mods=${m.id}${st.wrong ? '&wrong=1' : ''}">${st.wrong ? 'Błędne' : 'Trening'}</a></div></div>`;
     }).join('')}</div>
 
     <h3 style="margin:2.4rem 0 .3rem">Historia egzaminów próbnych</h3>
@@ -5259,7 +5262,7 @@ function viewProgress() {
     });
   }
   $$('[data-done]').forEach(c => c.addEventListener('change', () => { c.checked ? S.done[c.dataset.done] = 1 : delete S.done[c.dataset.done]; save(); viewProgressSummaryRefresh(); }));
-  function viewProgressSummaryRefresh() { const cards = $$('.agrid .card .big'); if (cards[0]) cards[0].innerHTML = `${doneCount()}<span class="muted" style="font-size:1.2rem">/${covered.length}</span>`; }
+  function viewProgressSummaryRefresh() { const cards = $$('.agrid .card .big'); if (cards[0]) cards[0].innerHTML = `${doneCount()}<span class="muted" style="font-size:1.2rem">/${MODS.length}</span>`; }
 
   const readJsonKey = (k, fallback = null) => {
     try { const raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; }

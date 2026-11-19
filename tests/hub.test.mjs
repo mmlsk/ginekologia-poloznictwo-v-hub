@@ -5,7 +5,7 @@ import logic from '../js/logic.js';
 const {
   esc, norm, b64EncodeUtf8, b64DecodeUtf8,
   calcNaegele, calcBishop, calcApgar, calcOgttPregnancy, calcRmi,
-  parseQuestionsInput, diagnoseQuestionsInput, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
+  parseQuestionsInput, diagnoseQuestionsInput, compactQuestionOptions, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
 } = logic;
 
 test('UTF-8 base64 round-trip preserves Polish diacritics', () => {
@@ -241,4 +241,15 @@ test('matchQuestionJump resolves exact IDs, leading #, pure numbers, suffixes, a
   assert.equal(matchQuestionJump('999', questions), null);
   assert.equal(matchQuestionJump('   ', questions), null);
   assert.equal(matchQuestionJump('gp0005', []), null);
+});
+
+test('compactQuestionOptions remaps key index when earlier options are blank and rejects empty selected option', () => {
+  const remapped = compactQuestionOptions(['Opcja A', '', 'Opcja C', 'Opcja D'], 3);
+  assert.equal(remapped.ok, true);
+  assert.deepEqual(remapped.opts, ['Opcja A', 'Opcja C', 'Opcja D']);
+  assert.equal(remapped.keyIdx, 2);
+
+  const emptySelected = compactQuestionOptions(['Opcja A', '', 'Opcja C'], 1);
+  assert.equal(emptySelected.ok, false);
+  assert.match(emptySelected.error, /pusta/i);
 });

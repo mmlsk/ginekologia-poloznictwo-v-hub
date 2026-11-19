@@ -555,10 +555,25 @@
     return { score, total, pct: pctScore, passed: pctScore >= 60, byMod, wrongQIds };
   }
 
+  function compactQuestionOptions(rawOpts, selectedIdx = 0) {
+    const arr = Array.isArray(rawOpts) ? rawOpts : [];
+    const opts = [];
+    let keyIdx = -1;
+    arr.forEach((raw, idx) => {
+      const val = String(raw == null ? '' : raw).trim();
+      if (!val) return;
+      if (idx === selectedIdx) keyIdx = opts.length;
+      opts.push(val);
+    });
+    if (opts.length < 2) return { ok: false, error: 'Podaj co najmniej 2 opcje odpowiedzi!' };
+    if (keyIdx < 0) return { ok: false, error: 'Wybrana poprawna odpowiedź jest pusta — uzupełnij jej treść albo wskaż inną literę.' };
+    return { ok: true, opts, keyIdx };
+  }
+
   const api = {
     esc, escB, norm, pct, b64EncodeUtf8, b64DecodeUtf8,
     calcNaegele, calcBishop, calcApgar, calcOgttPregnancy, calcRmi,
-    parseQuestionsInput, diagnoseQuestionsInput, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
+    parseQuestionsInput, diagnoseQuestionsInput, compactQuestionOptions, buildBackupPayload, parseBackupCode, matchQuestionJump, parseMarkdown, scoreExam
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
